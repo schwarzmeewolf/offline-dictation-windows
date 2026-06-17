@@ -1,3 +1,6 @@
+# ВАЖНО: ctranslate2 нужно импортировать ДО PyQt5, иначе на Windows
+# происходит access violation из-за конфликта нативных DLL (OpenMP/runtime).
+import ctranslate2  # noqa: F401  (должен быть первым)
 import os
 import sys
 import time
