@@ -159,9 +159,13 @@ class SettingsWindow(BaseWindow):
         return help_button
 
     def get_config_value(self, category, sub_category, key, meta):
+        # Сравнение именно с None: `or` подменял дефолтом схемы любое
+        # falsy-значение (False, 0, ''), и Save писал его обратно в конфиг.
         if sub_category:
-            return ConfigManager.get_config_value(category, sub_category, key) or meta['value']
-        return ConfigManager.get_config_value(category, key) or meta['value']
+            value = ConfigManager.get_config_value(category, sub_category, key)
+        else:
+            value = ConfigManager.get_config_value(category, key)
+        return meta['value'] if value is None else value
 
     def browse_model_path(self, widget):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Whisper Model File", "", "Model Files (*.bin);;All Files (*)")
