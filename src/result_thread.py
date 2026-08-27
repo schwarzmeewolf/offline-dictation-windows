@@ -12,6 +12,16 @@ from threading import Event
 from transcription import transcribe
 from utils import ConfigManager
 
+# A recording must not be able to run forever. The voice activity detector only
+# ends a recording after it has heard speech, so a muted or unplugged microphone
+# leaves the loop with no reachable exit at all - the app looks frozen.
+NO_SPEECH_TIMEOUT_MS = 15000
+MAX_RECORDING_MS = 300000
+
+
+class NoSpeechDetected(Exception):
+    """Raised when a recording ran its course without the VAD ever hearing speech."""
+
 
 class ResultThread(QThread):
     """
@@ -114,6 +124,12 @@ class ResultThread(QThread):
         :param error: the exception raised while recording or transcribing
         :return: a message for the error dialog
         """
+        if isinstance(error, NoSpeechDetected):
+            return ('Речь не услышана — запись остановлена.\n\n'
+                    'Микрофон открылся, но сигнала с него нет. Проверьте кнопку '
+                    'отключения звука на самом микрофоне и уровень записи '
+                    'в параметрах звука Windows.\n\n'
+                    f'{error}')
         if isinstance(error, sd.PortAudioError):
             return ('Не удалось начать запись: микрофон недоступен.\n\n'
                     'Проверьте, что он подключён и выбран устройством записи '
@@ -158,11 +174,30 @@ class ResultThread(QThread):
             audio_buffer.extend(indata[:, 0])
             data_ready.set()
 
+        started_at = time.time()
+        gave_up_on_speech = False
+
         with sd.InputStream(samplerate=self.sample_rate, channels=1, dtype='int16',
                             blocksize=frame_size, device=recording_options.get('sound_device'),
                             callback=audio_callback):
             while self.is_running and self.is_recording:
-                data_ready.wait()
+                elapsed_ms = (time.time() - started_at) * 1000
+
+                # Silent microphone: the exit below waits for speech that will
+                # never come, so stop and say so instead of recording forever.
+                if vad and not speech_detected and elapsed_ms > NO_SPEECH_TIMEOUT_MS:
+                    gave_up_on_speech = True
+                    break
+
+                # Heard speech but never a long enough pause - keep what we have.
+                if elapsed_ms > MAX_RECORDING_MS:
+                    ConfigManager.console_print('Recording hit the length limit.')
+                    break
+
+                # Waiting with a timeout keeps a stalled audio callback from
+                # blocking this thread, which would freeze the whole app on stop().
+                if not data_ready.wait(0.5):
+                    continue
                 data_ready.clear()
 
                 if len(audio_buffer) < frame_size:
@@ -194,6 +229,10 @@ class ResultThread(QThread):
         duration = len(audio_data) / self.sample_rate
 
         ConfigManager.console_print(f'Recording finished. Size: {audio_data.size} samples, Duration: {duration:.2f} seconds')
+
+        if gave_up_on_speech:
+            peak = int(np.abs(audio_data).max()) if audio_data.size else 0
+            raise NoSpeechDetected(f'{duration:.0f} с без речи, громкость сигнала {peak} из 32767')
 
         min_duration_ms = recording_options.get('min_duration') or 100
 
