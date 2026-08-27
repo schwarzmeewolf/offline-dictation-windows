@@ -31,6 +31,7 @@ class ResultThread(QThread):
 
     statusSignal = pyqtSignal(str)
     resultSignal = pyqtSignal(str)
+    errorSignal = pyqtSignal(str)
 
     def __init__(self, local_model=None):
         """
@@ -100,9 +101,27 @@ class ResultThread(QThread):
         except Exception as e:
             traceback.print_exc()
             self.statusSignal.emit('error')
+            self.errorSignal.emit(self._describe_error(e))
             self.resultSignal.emit('')
         finally:
             self.stop_recording()
+
+    @staticmethod
+    def _describe_error(error):
+        """
+        Turn an exception into something the user can act on.
+
+        :param error: the exception raised while recording or transcribing
+        :return: a message for the error dialog
+        """
+        if isinstance(error, sd.PortAudioError):
+            return ('Не удалось начать запись: микрофон недоступен.\n\n'
+                    'Проверьте, что он подключён и выбран устройством записи '
+                    'по умолчанию в параметрах звука Windows.\n\n'
+                    f'{error}')
+        return (f'Диктовка прервалась: {type(error).__name__}.\n\n'
+                f'{error}\n\n'
+                'Подробности — в файле ww_err.log в папке программы.')
 
     def _record_audio(self):
         """

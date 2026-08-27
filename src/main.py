@@ -20,12 +20,37 @@ from input_simulation import InputSimulator
 from utils import ConfigManager
 
 
+def attach_log_files():
+    """
+    Give print() and tracebacks somewhere to go.
+
+    Under pythonw.exe there is no console: sys.stdout and sys.stderr are None,
+    and Python drops every message and every traceback silently. Point them at
+    log files in the project root instead, so a failure leaves a trace.
+    Paths are derived from this file, not the working directory, so the logs
+    land in the right place even if the app is started from elsewhere.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        if sys.stdout is None:
+            sys.stdout = open(os.path.join(root, 'ww_out.log'), 'a',
+                              encoding='utf-8', buffering=1)
+        if sys.stderr is None:
+            sys.stderr = open(os.path.join(root, 'ww_err.log'), 'a',
+                              encoding='utf-8', buffering=1)
+    except OSError:
+        # An unwritable folder must not keep the app from starting; without the
+        # log files print() simply stays the no-op it was before.
+        pass
+
+
 class WhisperWriterApp(QObject):
     def __init__(self):
         """
         Initialize the application, opening settings window if no configuration file is found.
         """
         super().__init__()
+        self.error_box_open = False
         self.app = QApplication(sys.argv)
         self.app.setWindowIcon(QIcon(os.path.join('assets', 'ww-logo.png')))
 
@@ -156,6 +181,7 @@ class WhisperWriterApp(QObject):
             self.result_thread.statusSignal.connect(self.status_window.updateStatus)
             self.status_window.closeSignal.connect(self.stop_result_thread)
         self.result_thread.resultSignal.connect(self.on_transcription_complete)
+        self.result_thread.errorSignal.connect(self.on_thread_error)
         self.result_thread.start()
 
     def stop_result_thread(self):
@@ -164,6 +190,22 @@ class WhisperWriterApp(QObject):
         """
         if self.result_thread and self.result_thread.isRunning():
             self.result_thread.stop()
+
+    def on_thread_error(self, message):
+        """
+        Tell the user why a dictation attempt produced nothing.
+
+        Without this the failure is invisible: the status window blinks once and
+        the traceback goes to a console that does not exist under pythonw.exe.
+        One dialog at a time, so holding the activation key cannot stack them up.
+        """
+        if self.error_box_open:
+            return
+        self.error_box_open = True
+        try:
+            QMessageBox.warning(None, 'WhisperWriter', message)
+        finally:
+            self.error_box_open = False
 
     def on_transcription_complete(self, result):
         """
@@ -187,5 +229,7 @@ class WhisperWriterApp(QObject):
 
 
 if __name__ == '__main__':
+    attach_log_files()
+    print(f'--- WhisperWriter started {time.strftime("%Y-%m-%d %H:%M:%S")} ---')
     app = WhisperWriterApp()
     app.run()
