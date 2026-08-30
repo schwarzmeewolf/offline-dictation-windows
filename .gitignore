@@ -133,3 +133,7 @@ config.yaml
 # ...but keep the working config in git: the settings window rewrites it
 # wholesale on Save, so history is the only way back.
 !src/config.yaml
+
+# Local working notes and config backups - kept on disk, never published
+_BRIEF-*.md
+config.yaml.backup-*
