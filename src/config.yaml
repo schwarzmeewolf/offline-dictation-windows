@@ -14,10 +14,10 @@ model_options:
     vad_filter: true        # обрезать тишину
 
 recording_options:
-  activation_key: ctrl+meta+space   # Ctrl+Win+Space — не конфликтует с Ctrl+Shift (язык) и Alt+Shift (раскладка)
+  activation_key: pause   # одиночная клавиша: мимо Ctrl+Shift (язык), Alt+Shift (раскладка) и Win+Space (системный переключатель ввода)
   recording_mode: voice_activity_detection   # нажал — пишет; пауза в речи — авто-стоп и распознавание
   sample_rate: 16000
-  silence_duration: 900
+  silence_duration: 2000    # пауза в речи, после которой запись закрывается и идёт распознавание
   min_duration: 100
 
 post_processing:

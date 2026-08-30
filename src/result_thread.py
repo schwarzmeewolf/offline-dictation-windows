@@ -15,7 +15,7 @@ from utils import ConfigManager
 # A recording must not be able to run forever. The voice activity detector only
 # ends a recording after it has heard speech, so a muted or unplugged microphone
 # leaves the loop with no reachable exit at all - the app looks frozen.
-NO_SPEECH_TIMEOUT_MS = 15000
+NO_SPEECH_TIMEOUT_MS = 25000
 MAX_RECORDING_MS = 300000
 
 
@@ -106,6 +106,14 @@ class ResultThread(QThread):
                 return
 
             self.statusSignal.emit('idle')
+
+            if not result.strip():
+                # Nothing came back. Typing the lone trailing space that post
+                # processing leaves behind would look like the app did its job.
+                self.errorSignal.emit(self._describe_blank(audio_data))
+                self.resultSignal.emit('')
+                return
+
             self.resultSignal.emit(result)
 
         except Exception as e:
@@ -115,6 +123,22 @@ class ResultThread(QThread):
             self.resultSignal.emit('')
         finally:
             self.stop_recording()
+
+    def _describe_blank(self, audio_data):
+        """
+        Explain a recording that came back without any text.
+
+        :param audio_data: the recorded samples the transcriber saw
+        :return: a message for the error dialog
+        """
+        peak = int(np.abs(audio_data).max()) if audio_data.size else 0
+        seconds = audio_data.size / (self.sample_rate or 16000)
+        hint = ('Сигнал почти нулевой — проверьте кнопку отключения звука на микрофоне '
+                'и уровень записи в параметрах звука Windows.'
+                if peak < 500 else
+                'Звук есть, но слов в нём не разобрано. Попробуйте говорить ближе к микрофону.')
+        return (f'Ничего не распознано.\n\n'
+                f'Записано {seconds:.1f} с, громкость сигнала {peak} из 32767.\n\n{hint}')
 
     @staticmethod
     def _describe_error(error):
