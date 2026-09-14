@@ -10,6 +10,7 @@ from collections import deque
 from threading import Event
 
 import mic_gate
+from i18n import tr
 from transcription import transcribe
 from utils import ConfigManager
 
@@ -134,12 +135,14 @@ class ResultThread(QThread):
         """
         peak = int(np.abs(audio_data).max()) if audio_data.size else 0
         seconds = audio_data.size / (self.sample_rate or 16000)
-        hint = ('Сигнал почти нулевой — проверьте кнопку отключения звука на микрофоне '
-                'и уровень записи в параметрах звука Windows.'
-                if peak < 500 else
-                'Звук есть, но слов в нём не разобрано. Попробуйте говорить ближе к микрофону.')
-        return (f'Ничего не распознано.\n\n'
-                f'Записано {seconds:.1f} с, громкость сигнала {peak} из 32767.\n\n{hint}')
+        flat = ('The signal is almost flat - check the mute button on the microphone '
+                'itself and the recording level in Windows sound settings.')
+        muffled = ('There is sound, but no words could be made out. '
+                   'Try speaking closer to the microphone.')
+        hint = tr(flat) if peak < 500 else tr(muffled)
+        measured = tr('Recorded {seconds:.1f} s, signal peak {peak} of 32767.').format(
+            seconds=seconds, peak=peak)
+        return f"{tr('Nothing was recognised.')}\n\n{measured}\n\n{hint}"
 
     @staticmethod
     def _describe_error(error):
@@ -150,19 +153,22 @@ class ResultThread(QThread):
         :return: a message for the error dialog
         """
         if isinstance(error, NoSpeechDetected):
-            return ('Речь не услышана — запись остановлена.\n\n'
-                    'Микрофон открылся, но сигнала с него нет. Проверьте кнопку '
-                    'отключения звука на самом микрофоне и уровень записи '
-                    'в параметрах звука Windows.\n\n'
+            advice = ('The microphone opened but nothing is coming from it. Check the '
+                      'mute button on the microphone itself and the recording level in '
+                      'Windows sound settings.')
+            return (f"{tr('No speech heard - recording stopped.')}\n\n"
+                    f'{tr(advice)}\n\n'
                     f'{error}')
         if isinstance(error, sd.PortAudioError):
-            return ('Не удалось начать запись: микрофон недоступен.\n\n'
-                    'Проверьте, что он подключён и выбран устройством записи '
-                    'по умолчанию в параметрах звука Windows.\n\n'
+            advice = ('Check that it is plugged in and selected as the default '
+                      'recording device in Windows sound settings.')
+            return (f"{tr('Could not start recording: the microphone is unavailable.')}\n\n"
+                    f'{tr(advice)}\n\n'
                     f'{error}')
-        return (f'Диктовка прервалась: {type(error).__name__}.\n\n'
+        stopped = tr('Dictation stopped: {error_type}.').format(error_type=type(error).__name__)
+        return (f'{stopped}\n\n'
                 f'{error}\n\n'
-                'Подробности — в файле ww_err.log в папке программы.')
+                f"{tr('Details are in ww_err.log in the application folder.')}")
 
     def _record_audio(self):
         """
@@ -261,7 +267,9 @@ class ResultThread(QThread):
 
         if gave_up_on_speech:
             peak = int(np.abs(audio_data).max()) if audio_data.size else 0
-            raise NoSpeechDetected(f'{duration:.0f} с без речи, громкость сигнала {peak} из 32767')
+            raise NoSpeechDetected(
+                tr('{seconds:.0f} s without speech, signal peak {peak} of 32767').format(
+                    seconds=duration, peak=peak))
 
         min_duration_ms = recording_options.get('min_duration') or 100
 

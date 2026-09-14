@@ -113,6 +113,23 @@ Two supporting pieces live in `tools/`:
   `schtasks /create /tn "WhisperWriter Mic Guard" /xml tools\mic-guard-task.xml /f`.
   Change the idle threshold in the XML's `<Duration>` field.
 
+### English and Russian interface
+
+Upstream's interface is English only, while this fork's error messages had grown
+Russian — a mix that served neither reader. Both languages now come from one
+catalogue in `src/i18n.py`, chosen by `misc.ui_language` (`en` or `ru`).
+
+English is the source language: every string appears in the code as its English
+text and the catalogue maps it to Russian. A string with no entry falls through
+unchanged, so a missing translation shows English rather than a blank. Labels and
+help text in the settings window are translated from the English text the schema
+key produces, which leaves `config_schema.yaml` untouched and easy to merge from
+upstream.
+
+Widgets read their text once, when they are built, so the language takes effect
+on the next start. Saving settings already restarts the app, which is the only
+way the setting can change.
+
 ### Windows integration
 
 - `Запустить-диктовку.bat` — launcher; refuses to start a second instance.

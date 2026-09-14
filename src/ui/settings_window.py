@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QCoreApplication, QProcess, pyqtSignal
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from i18n import tr
 from ui.base_window import BaseWindow
 from utils import ConfigManager
 
@@ -19,13 +20,35 @@ class SettingsWindow(BaseWindow):
 
     def __init__(self):
         """Initialize the settings window."""
-        super().__init__('Settings', 700, 700)
+        super().__init__(tr('Settings'), 700, 700)
         self.schema = ConfigManager.get_schema()
         self.init_settings_ui()
 
     def init_settings_ui(self):
         """Initialize the settings user interface."""
         self.tabs = QTabWidget()
+        # BaseWindow paints the window yellow; without this the tab pane keeps
+        # Qt's own white sheet and the window reads as two unrelated halves.
+        # Input fields stay white on purpose - they are where text is entered.
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                background: transparent;
+                border: 1px solid #d9b310;
+                border-radius: 4px;
+            }
+            QTabWidget > QWidget { background: transparent; }
+            QTabBar::tab {
+                background: #fff3bf;
+                border: 1px solid #d9b310;
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                padding: 5px 12px;
+                margin-right: 2px;
+                color: #3a3a3a;
+            }
+            QTabBar::tab:selected { background: #ffec99; }
+        """)
         self.main_layout.addWidget(self.tabs)
 
         self.create_tabs()
@@ -43,7 +66,7 @@ class SettingsWindow(BaseWindow):
             tab = QWidget()
             tab_layout = QVBoxLayout()
             tab.setLayout(tab_layout)
-            self.tabs.addTab(tab, category.replace('_', ' ').capitalize())
+            self.tabs.addTab(tab, tr(category.replace('_', ' ').capitalize()))
 
             self.create_settings_widgets(tab_layout, category, settings)
             tab_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
@@ -59,18 +82,20 @@ class SettingsWindow(BaseWindow):
 
     def create_buttons(self):
         """Create reset and save buttons."""
-        reset_button = QPushButton('Reset to saved settings')
+        reset_button = QPushButton(tr('Reset to saved settings'))
         reset_button.clicked.connect(self.reset_settings)
         self.main_layout.addWidget(reset_button)
 
-        save_button = QPushButton('Save')
+        save_button = QPushButton(tr('Save'))
         save_button.clicked.connect(self.save_settings)
         self.main_layout.addWidget(save_button)
 
     def add_setting_widget(self, layout, key, meta, category, sub_category=None):
         """Add a setting widget to the layout."""
         item_layout = QHBoxLayout()
-        label = QLabel(f"{key.replace('_', ' ').capitalize()}:")
+        # Translated from the English label the schema key produces, so the
+        # catalogue keys stay readable and the schema itself is untouched.
+        label = QLabel(f"{tr(key.replace('_', ' ').capitalize())}:")
         label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         widget = self.create_widget_for_type(key, meta, category, sub_category)
@@ -139,7 +164,7 @@ class SettingsWindow(BaseWindow):
         elif key == 'model_path':
             layout = QHBoxLayout()
             layout.addWidget(widget)
-            browse_button = QPushButton('Browse')
+            browse_button = QPushButton(tr('Browse'))
             browse_button.clicked.connect(lambda: self.browse_model_path(widget))
             layout.addWidget(browse_button)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -152,10 +177,10 @@ class SettingsWindow(BaseWindow):
         help_button = QToolButton()
         help_button.setIcon(self.style().standardIcon(QStyle.SP_MessageBoxQuestion))
         help_button.setAutoRaise(True)
-        help_button.setToolTip(description)
+        help_button.setToolTip(tr(description))
         help_button.setCursor(Qt.PointingHandCursor)
         help_button.setFocusPolicy(Qt.TabFocus)
-        help_button.clicked.connect(lambda: self.show_description(description))
+        help_button.clicked.connect(lambda: self.show_description(tr(description)))
         return help_button
 
     def get_config_value(self, category, sub_category, key, meta):
@@ -168,13 +193,15 @@ class SettingsWindow(BaseWindow):
         return meta['value'] if value is None else value
 
     def browse_model_path(self, widget):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select Whisper Model File", "", "Model Files (*.bin);;All Files (*)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, tr("Select Whisper Model File"), "",
+            tr("Model Files (*.bin);;All Files (*)"))
         if file_path:
             widget.setText(file_path)
 
     def show_description(self, description):
         """Show a description dialog."""
-        QMessageBox.information(self, 'Description', description)
+        QMessageBox.information(self, tr('Description'), description)
 
     def save_settings(self):
         """Save the settings to the config file and .env file."""
@@ -189,7 +216,8 @@ class SettingsWindow(BaseWindow):
         ConfigManager.set_config_value(None, 'model_options', 'api', 'api_key')
 
         ConfigManager.save_config()
-        QMessageBox.information(self, 'Settings Saved', 'Settings have been saved. The application will now restart.')
+        QMessageBox.information(self, tr('Settings'),
+                                tr('Settings have been saved. The application will now restart.'))
         self.settings_saved.emit()
         self.close()
 

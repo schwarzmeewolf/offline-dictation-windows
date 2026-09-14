@@ -11,7 +11,9 @@ from PyQt5.QtCore import QObject, QProcess
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction, QMessageBox
 
+import i18n
 import mic_gate
+from i18n import tr
 from key_listener import KeyListener
 from result_thread import ResultThread
 from ui.main_window import MainWindow
@@ -103,6 +105,8 @@ class WhisperWriterApp(QObject):
         self.app.setWindowIcon(QIcon(os.path.join('assets', 'ww-logo.png')))
 
         ConfigManager.initialize()
+        # Before any widget is built: they read their text once, on creation.
+        i18n.set_language(ConfigManager.get_config_value('misc', 'ui_language'))
 
         self.settings_window = SettingsWindow()
         self.settings_window.settings_closed.connect(self.on_settings_closed)
@@ -159,15 +163,15 @@ class WhisperWriterApp(QObject):
 
         tray_menu = QMenu()
 
-        show_action = QAction('WhisperWriter Main Menu', self.app)
+        show_action = QAction(tr('WhisperWriter Main Menu'), self.app)
         show_action.triggered.connect(self.main_window.show)
         tray_menu.addAction(show_action)
 
-        settings_action = QAction('Open Settings', self.app)
+        settings_action = QAction(tr('Open Settings'), self.app)
         settings_action.triggered.connect(self.settings_window.show)
         tray_menu.addAction(settings_action)
 
-        exit_action = QAction('Exit', self.app)
+        exit_action = QAction(tr('Exit'), self.app)
         exit_action.triggered.connect(self.exit_app)
         tray_menu.addAction(exit_action)
 

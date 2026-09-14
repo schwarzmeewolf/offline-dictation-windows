@@ -153,6 +153,13 @@ post_processing:
 
 # Miscellaneous settings
 misc:
+  ui_language:
+    value: en
+    type: str
+    description: "The language of the application's own interface. Does not affect transcription - that is set by model_options.common.language."
+    options:
+      - en
+      - ru
   print_to_terminal:
     value: true
     type: bool

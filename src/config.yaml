@@ -25,6 +25,7 @@ post_processing:
   remove_trailing_period: false
 
 misc:
+  ui_language: ru   # язык интерфейса: ru или en; на распознавание не влияет
   print_to_terminal: true
   hide_status_window: false
   noise_on_completion: false
