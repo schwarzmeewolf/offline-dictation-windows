@@ -66,6 +66,42 @@ after every transcription. Hooks accumulated for the life of the process, each o
 delivering the same key event to the callbacks another time. `start()` now stops
 what it started, so the count stays at two no matter how long the app runs.
 
+### The microphone stays shut outside dictation
+
+Windows leaves a capture device open to every process all day. This fork inverts
+that: the microphone is closed by default and a dictation opens it for the few
+seconds it records. Controlled by `security.mic_gate` in `src/config.yaml`
+(`off`, `mute`, `consent`, `both`).
+
+Two levers, and they are not equally strong:
+
+| Lever | Protects against | Undone by |
+| --- | --- | --- |
+| `consent` — HKCU CapabilityAccessManager | browsers, meeting apps, anything opening a mic unasked | any code running as this user |
+| `mute` — endpoint mute flag | accidental hot-mic; makes the state visible in the volume UI | any process, in one call |
+
+Neither stops code that already runs as you. **The only real guarantee is the
+hardware mute button on the microphone.** The gate removes the always-listening
+default; it is not a defence against malware, and it would be dishonest to
+present it as one.
+
+`src/mic_gate.py` never raises: a gate that cannot close is a privacy problem,
+but a gate that throws is a broken application. Failures are logged and swallowed.
+The gate shuts on app start, after every recording, on exceptions during a
+recording, and at exit — closed is the fail-safe direction.
+
+Two supporting pieces live in `tools/`:
+
+- `mic-guard.ps1` — `-Status`, `-Open`, `-Close`, `-Audit`. No administrator
+  rights needed. `-Audit` reads the usage journal Windows itself keeps, showing
+  which applications held the microphone and when, and which hold it right now.
+  Use `-Open` when you need the microphone for a call.
+- `mic-guard-task.xml` — a Task Scheduler job that closes the microphone after
+  five minutes of idle, as a backstop for when WhisperWriter exits without
+  restoring the state. Register with
+  `schtasks /create /tn "WhisperWriter Mic Guard" /xml tools\mic-guard-task.xml /f`.
+  Change the idle threshold in the XML's `<Duration>` field.
+
 ### Windows integration
 
 - `Запустить-диктовку.bat` — launcher; refuses to start a second instance.

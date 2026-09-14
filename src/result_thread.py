@@ -9,6 +9,7 @@ from PyQt5.QtCore import QThread, QMutex, pyqtSignal
 from collections import deque
 from threading import Event
 
+import mic_gate
 from transcription import transcribe
 from utils import ConfigManager
 
@@ -201,9 +202,13 @@ class ResultThread(QThread):
         started_at = time.time()
         gave_up_on_speech = False
 
-        with sd.InputStream(samplerate=self.sample_rate, channels=1, dtype='int16',
-                            blocksize=frame_size, device=recording_options.get('sound_device'),
-                            callback=audio_callback):
+        # The gate opens the microphone here and shuts it again on the way out,
+        # including when the loop below raises. Outside this block the device is
+        # closed to every application, this one included.
+        with mic_gate.recording_session(), sd.InputStream(
+                samplerate=self.sample_rate, channels=1, dtype='int16',
+                blocksize=frame_size, device=recording_options.get('sound_device'),
+                callback=audio_callback):
             while self.is_running and self.is_recording:
                 elapsed_ms = (time.time() - started_at) * 1000
 

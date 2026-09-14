@@ -28,3 +28,6 @@ misc:
   print_to_terminal: true
   hide_status_window: false
   noise_on_completion: false
+
+security:
+  mic_gate: both   # микрофон закрыт всегда, открывается только на время диктовки
