@@ -90,6 +90,17 @@ but a gate that throws is a broken application. Failures are logged and swallowe
 The gate shuts on app start, after every recording, on exceptions during a
 recording, and at exit — closed is the fail-safe direction.
 
+The mute lever holds its COM pointers for the life of the process and never
+releases them, which is deliberate. A comtypes proxy that goes out of scope
+lands in a reference cycle, so its `Release()` is left to the cyclic garbage
+collector — running at an arbitrary later moment on whatever thread happens to
+allocate. On this machine that release faults every time. Usually ctypes catches
+it and prints an ignored `__del__` traceback; once it did not, and the collector
+fired inside onnxruntime's DLL load during a transcription and took the whole
+process with it. Building the device enumerator by hand instead of through
+`AudioUtilities.GetMicrophone()`, and keeping every intermediate pointer alive,
+leaves the collector nothing to release.
+
 Two supporting pieces live in `tools/`:
 
 - `mic-guard.ps1` — `-Status`, `-Open`, `-Close`, `-Audit`. No administrator
@@ -221,8 +232,9 @@ begins with a `--- WhisperWriter started <timestamp> ---` line.
 | Dialog: microphone unavailable | No input device. `PortAudioError: Error querying device -1` means Windows has no default recording device at all. |
 | Dialog: no speech heard | The microphone is open but silent — check the hardware mute button before anything else. Windows can report a healthy level while the device sends nothing. |
 | Dialog: nothing recognised | Audio arrived but produced no text. The message includes the measured peak; a near-zero peak points back at the microphone. |
-| Nothing happens at all | The keyboard listener starts only after **Start** is pressed. |
+| Nothing happens at all | The model is still loading — the listener starts only once it is ready, which takes a few seconds on first launch. Check `ww_out.log` for `Listening for the activation key.` |
 | App dies instantly on start | Check that `import ctranslate2` is still the first import in `src/main.py`. |
+| App vanishes mid-transcription | Look for a `Windows fatal exception` block in `ww_err.log`; the faulthandler stack names the thread and the call. |
 
 To watch it run with a console attached:
 

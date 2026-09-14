@@ -28,6 +28,7 @@ application.
 import atexit
 import winreg
 from contextlib import contextmanager
+from threading import Lock
 
 from utils import ConfigManager
 
@@ -81,25 +82,60 @@ def read_consent():
 
 # --- mute lever ----------------------------------------------------------
 
+# Every COM pointer the mute lever touches is built once and held here for the
+# life of the process. Nothing is ever released, and that is the whole point.
+#
+# A COM pointer this app drops does not die when its last name goes out of
+# scope: comtypes proxies end up in reference cycles, so Release() is left to
+# the cyclic garbage collector, which fires at an arbitrary later moment on
+# whatever thread happens to allocate. Releasing one of pycaw's own pointers
+# that way faults on this machine - reproducibly, once per call. Most of the
+# time ctypes catches the access violation and prints an ignored __del__
+# traceback; once it did not, and the collector fired in the middle of
+# onnxruntime's DLL load during a transcription and took the process with it.
+# The faulthandler stack is in ww_err.log.
+#
+# Holding the pointers leaves the collector nothing to release. Windows
+# reclaims them when the process exits, which is when we would have released
+# them anyway.
+_com = {}
+_com_lock = Lock()
+
+
 def _endpoint():
     """
-    Return the default capture endpoint's volume interface.
+    Return the default capture endpoint's volume interface, building it once.
 
-    COM is initialised explicitly: this runs inside a QThread, where nothing
-    else has done it, and pycaw would otherwise fail on the first call.
+    CoInitialize runs on every call because COM must be initialised per thread
+    and this is reached from the recording QThread as well as the GUI thread;
+    it only bumps a counter once the apartment exists.
     """
     import comtypes
     from ctypes import cast, POINTER
     from comtypes import CLSCTX_ALL
-    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    from pycaw.api.endpointvolume import IAudioEndpointVolume
+    from pycaw.api.mmdeviceapi import IMMDeviceEnumerator
+    from pycaw.constants import CLSID_MMDeviceEnumerator, EDataFlow, ERole
 
     try:
         comtypes.CoInitialize()
-    except Exception:
-        pass
-    mic = AudioUtilities.GetMicrophone()
-    return cast(mic.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None),
+    except Exception as e:
+        _log(f'CoInitialize failed: {e}')
+
+    with _com_lock:
+        if 'volume' not in _com:
+            # Built by hand rather than through AudioUtilities.GetMicrophone(),
+            # which drops its enumerator on return - straight into the cycle
+            # collector described above. Here every intermediate is kept.
+            _com['enumerator'] = comtypes.CoCreateInstance(
+                CLSID_MMDeviceEnumerator, IMMDeviceEnumerator,
+                comtypes.CLSCTX_INPROC_SERVER)
+            _com['mic'] = _com['enumerator'].GetDefaultAudioEndpoint(
+                EDataFlow.eCapture.value, ERole.eMultimedia.value)
+            _com['volume'] = cast(
+                _com['mic'].Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None),
                 POINTER(IAudioEndpointVolume))
+        return _com['volume']
 
 
 def _write_mute(flag):
@@ -110,7 +146,15 @@ def _write_mute(flag):
 
 
 def read_mute():
-    """Return True/False, or None if the endpoint cannot be reached."""
+    """
+    Return True/False, or None if the endpoint cannot be reached.
+
+    Skipped entirely unless the mute lever is actually in use: status() calls
+    this on startup, and there is no reason to drag COM into a run configured
+    for the consent lever alone.
+    """
+    if _mode() not in ('mute', 'both'):
+        return None
     try:
         return bool(_endpoint().GetMute())
     except Exception:
