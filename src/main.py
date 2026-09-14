@@ -1,6 +1,7 @@
 # ВАЖНО: ctranslate2 нужно импортировать ДО PyQt5, иначе на Windows
 # происходит access violation из-за конфликта нативных DLL (OpenMP/runtime).
 import ctranslate2  # noqa: F401  (должен быть первым)
+import faulthandler
 import os
 import sys
 import time
@@ -10,6 +11,7 @@ from PyQt5.QtCore import QObject, QProcess
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction, QMessageBox
 
+import mic_gate
 from key_listener import KeyListener
 from result_thread import ResultThread
 from ui.main_window import MainWindow
@@ -42,6 +44,16 @@ def attach_log_files():
         # An unwritable folder must not keep the app from starting; without the
         # log files print() simply stays the no-op it was before.
         pass
+
+    # A native crash - an access violation inside a C extension - kills the
+    # process without raising anything Python can catch, so the error log stays
+    # empty and the app simply vanishes. faulthandler dumps the stack of every
+    # thread as the process dies, which is the only way to learn where it was.
+    if sys.stderr is not None:
+        try:
+            faulthandler.enable(file=sys.stderr)
+        except (OSError, ValueError, RuntimeError):
+            pass
 
 
 class WhisperWriterApp(QObject):
@@ -95,6 +107,11 @@ class WhisperWriterApp(QObject):
         if not ConfigManager.get_config_value('misc', 'hide_status_window'):
             self.status_window = StatusWindow()
 
+        # Start from the closed state, so a launch never leaves the microphone
+        # open just because the previous run ended badly.
+        mic_gate.close()
+        ConfigManager.console_print(f'Mic gate: {mic_gate.status()}')
+
         self.create_tray_icon()
 
         # Start listening straight away and stay in the tray. Upstream shows the
@@ -127,6 +144,7 @@ class WhisperWriterApp(QObject):
         self.tray_icon.show()
 
     def cleanup(self):
+        mic_gate.close()
         if self.key_listener:
             self.key_listener.stop()
         if self.input_simulator:
