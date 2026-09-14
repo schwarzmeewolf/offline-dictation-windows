@@ -2,6 +2,12 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QPainter, QBrush, QColor, QFont, QPainterPath, QGuiApplication
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QMainWindow
 
+# Background for every window the app draws itself. Yellow rather than the
+# upstream white: the status window floats on top of whatever is being worked
+# in, and a warm tint tells it apart at a glance from the white dialogs of
+# every other application. The alpha keeps the frosted look upstream had.
+WINDOW_COLOR = QColor(255, 224, 102, 230)
+
 
 class BaseWindow(QMainWindow):
     def __init__(self, title, width, height):
@@ -106,12 +112,12 @@ class BaseWindow(QMainWindow):
 
     def paintEvent(self, event):
         """
-        Create a rounded rectangle with a semi-transparent white background.
+        Create a rounded rectangle with a semi-transparent yellow background.
         """
         path = QPainterPath()
         path.addRoundedRect(QRectF(self.rect()), 20, 20)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(255, 255, 255, 220)))
+        painter.setBrush(QBrush(WINDOW_COLOR))
         painter.setPen(Qt.NoPen)
         painter.drawPath(path)

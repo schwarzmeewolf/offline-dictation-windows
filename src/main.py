@@ -56,6 +56,37 @@ def attach_log_files():
             pass
 
 
+# Matches the yellow BaseWindow paints, so a dialog and the status window read
+# as parts of the same application. QMessageBox is a native Qt dialog rather
+# than one of our own windows, so it has to be told separately; the buttons
+# need their own rules too, or they keep the system grey against the yellow.
+MESSAGE_BOX_STYLE = """
+    QMessageBox { background-color: #ffe066; }
+    QMessageBox QLabel { color: #3a3a3a; }
+    QMessageBox QPushButton {
+        background-color: #fff3bf;
+        border: 1px solid #d9b310;
+        border-radius: 4px;
+        padding: 5px 20px;
+        color: #3a3a3a;
+    }
+    QMessageBox QPushButton:hover { background-color: #ffec99; }
+    QMessageBox QPushButton:pressed { background-color: #f5d949; }
+"""
+
+
+def show_message(icon, text):
+    """
+    Put up a message box in the application's colours.
+
+    :param icon: the QMessageBox icon to use
+    :param text: the message to show
+    """
+    box = QMessageBox(icon, 'WhisperWriter', text)
+    box.setStyleSheet(MESSAGE_BOX_STYLE)
+    box.exec_()
+
+
 class WhisperWriterApp(QObject):
     def __init__(self):
         """
@@ -168,9 +199,8 @@ class WhisperWriterApp(QObject):
         If settings is closed without saving on first run, initialize the components with default values.
         """
         if not os.path.exists(os.path.join('src', 'config.yaml')):
-            QMessageBox.information(
-                self.settings_window,
-                'Using Default Values',
+            show_message(
+                QMessageBox.Information,
                 'Settings closed without saving. Default values are being used.'
             )
             self.initialize_components()
@@ -231,7 +261,7 @@ class WhisperWriterApp(QObject):
             return
         self.error_box_open = True
         try:
-            QMessageBox.warning(None, 'WhisperWriter', message)
+            show_message(QMessageBox.Warning, message)
         finally:
             self.error_box_open = False
 
