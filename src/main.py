@@ -52,6 +52,11 @@ class WhisperWriterApp(QObject):
         super().__init__()
         self.error_box_open = False
         self.app = QApplication(sys.argv)
+        # This app lives in the tray with every window hidden, so Qt's default
+        # "quit when the last visible window closes" would end it the moment an
+        # error dialog is dismissed. Quitting stays explicit: the tray menu, the
+        # main window's close button, or a restart after saving settings.
+        self.app.setQuitOnLastWindowClosed(False)
         self.app.setWindowIcon(QIcon(os.path.join('assets', 'ww-logo.png')))
 
         ConfigManager.initialize()
