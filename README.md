@@ -54,6 +54,18 @@ default back to disk, silently flipping the setting. Replaced with an explicit
 a fatal access violation from conflicting native runtimes. Three lines, carrying a
 comment that says not to "tidy up" the import order.
 
+### Starts ready to use, and stops leaking hooks
+
+Upstream shows a main window on every launch and does nothing until its **Start**
+button is clicked — the dictation key is dead until then. This fork starts the key
+listener as soon as the model is loaded and stays in the tray.
+
+Doing that exposed a second problem: `PynputBackend.start()` built fresh keyboard
+and mouse hooks **without stopping the previous ones**, and the app calls it again
+after every transcription. Hooks accumulated for the life of the process, each one
+delivering the same key event to the callbacks another time. `start()` now stops
+what it started, so the count stays at two no matter how long the app runs.
+
 ### Windows integration
 
 - `Запустить-диктовку.bat` — launcher; refuses to start a second instance.
@@ -116,9 +128,9 @@ launcher `.bat` files handle this with `cd /d`.
 The bundled `.bat` files assume the project lives at `C:\dev\whisper-writer`. Edit
 that path, or point a desktop shortcut at them with the working directory set.
 
-Once the window appears, press **Start** — the keyboard listener does not run until
-you do. The window then hides itself. Note that closing it with the `×` **quits the
-application** rather than minimising it.
+It loads the model, starts listening and stays in the tray — no window to dismiss,
+no button to press. The main window is still reachable from the tray menu; note
+that closing it with the `×` **quits the application** rather than hiding it.
 
 ## Configuration
 

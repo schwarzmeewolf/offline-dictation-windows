@@ -769,6 +769,11 @@ class PynputBackend(InputBackend):
             self.mouse = mouse
             self.key_map = self._create_key_map()
 
+        # start() is called again after every transcription. Without this the
+        # previous hooks keep running unreferenced, and each one delivers the
+        # same key event to the callbacks a second time.
+        self.stop()
+
         self.keyboard_listener = self.keyboard.Listener(
             on_press=self._on_keyboard_press,
             on_release=self._on_keyboard_release

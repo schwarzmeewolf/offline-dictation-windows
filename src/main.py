@@ -96,7 +96,12 @@ class WhisperWriterApp(QObject):
             self.status_window = StatusWindow()
 
         self.create_tray_icon()
-        self.main_window.show()
+
+        # Start listening straight away and stay in the tray. Upstream shows the
+        # main window and waits for its Start button, which means the dictation
+        # key does nothing until the user clicks it after every launch.
+        self.key_listener.start()
+        ConfigManager.console_print('Listening for the activation key.')
 
     def create_tray_icon(self):
         """
