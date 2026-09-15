@@ -293,13 +293,19 @@ venv\Scripts\python.exe -m pip install PyQt5 faster-whisper sounddevice soundfil
     pynput webrtcvad-wheels PyYAML openai audioplayer python-dotenv pycaw "numpy<2"
 ```
 
-Installing from `requirements.txt` may try to build `av` from source, which needs
-an FFmpeg toolchain; the explicit list above pulls prebuilt wheels instead.
+`requirements.txt` holds the same list and is equivalent:
+
+```bash
+venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+It pins direct dependencies only and leaves the rest to pip. Upstream's version
+pinned the entire closure, including packages this app never imports.
 
 For GPU transcription, add:
 
 ```bash
-venv\Scripts\python.exe -m pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
+venv\Scripts\python.exe -m pip install -r requirements-gpu.txt
 ```
 
 Nothing else is needed — `src/cuda_libs.py` finds those wheels wherever pip put
