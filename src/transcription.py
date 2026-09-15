@@ -44,6 +44,26 @@ def create_local_model():
     ConfigManager.console_print('Local model created.')
     return model
 
+def _temperature_ladder(temperature):
+    """
+    Turn a single temperature into the retry ladder faster-whisper expects.
+
+    faster-whisper defaults to [0.0, 0.2, ... 1.0]: it decodes at 0.0 and only
+    retries at a higher temperature when the result trips its own garbage
+    detectors - too repetitive, or too low an average log probability. Passing
+    a bare number instead, which is what the config holds, silently turns that
+    retry off, so a failed decode is returned as the answer.
+
+    :param temperature: the configured temperature
+    :return: a ladder starting at that temperature, or the value unchanged if
+             it is already a sequence
+    """
+    if isinstance(temperature, (list, tuple)):
+        return temperature
+    start = temperature or 0.0
+    return [t / 10 for t in range(int(start * 10), 11, 2)] or [start]
+
+
 def transcribe_local(audio_data, local_model=None):
     """
     Transcribe an audio file using a local model.
@@ -59,7 +79,7 @@ def transcribe_local(audio_data, local_model=None):
                                       language=model_options['common']['language'],
                                       initial_prompt=model_options['common']['initial_prompt'],
                                       condition_on_previous_text=model_options['local']['condition_on_previous_text'],
-                                      temperature=model_options['common']['temperature'],
+                                      temperature=_temperature_ladder(model_options['common']['temperature']),
                                       vad_filter=model_options['local']['vad_filter'],)
     return ''.join([segment.text for segment in list(response[0])])
 
