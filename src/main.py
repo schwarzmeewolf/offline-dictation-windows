@@ -1,6 +1,10 @@
 # ВАЖНО: ctranslate2 нужно импортировать ДО PyQt5, иначе на Windows
 # происходит access violation из-за конфликта нативных DLL (OpenMP/runtime).
-import ctranslate2  # noqa: F401  (должен быть первым)
+# cuda_libs идёт раньше: он тянет только стандартную библиотеку и лишь
+# прописывает в PATH каталоги с CUDA, без которых GPU падает на первом кадре.
+import cuda_libs
+cuda_libs.enable()
+import ctranslate2  # noqa: F401  (должен быть первым из нативных)
 import faulthandler
 import os
 import sys

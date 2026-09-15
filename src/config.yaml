@@ -5,11 +5,13 @@ model_options:
   use_api: false            # false = локальная модель (бесплатно, без интернета)
   common:
     language: ru            # русский язык распознавания
-    initial_prompt: null
+    # Словарь имён собственных: без него Whisper пишет их на слух
+    # («Фастер Хиспер», «Апеной»). Заодно задаёт стиль пунктуации.
+    initial_prompt: "Диктовка о разработке: Python, Windows, PowerShell, GitHub, faster-whisper, Whisper, OpenAI, CUDA, GPU, USB, API, репозиторий, коммит, конфиг."
   local:
-    model: small            # tiny/base/small/medium/large-v3 — баланс точность/скорость
-    device: cpu             # cpu — надёжно; для GPU нужны библиотеки CUDA (см. ниже)
-    compute_type: int8      # int8 — быстро на CPU
+    model: large-v3         # на GPU быстрее, чем small на CPU, и заметно точнее
+    device: cuda            # GeForce GTX 1050 Ti; библиотеки CUDA ставит cuda_libs.py
+    compute_type: int8_float32   # у Pascal нет пригодного float16, int8 — верный выбор
     condition_on_previous_text: false   # меньше зацикливаний при диктовке
     vad_filter: true        # обрезать тишину
 

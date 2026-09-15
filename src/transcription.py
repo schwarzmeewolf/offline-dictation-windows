@@ -16,11 +16,13 @@ def create_local_model():
     compute_type = local_model_options['compute_type']
     model_path = local_model_options.get('model_path')
 
-    if compute_type == 'int8':
-        device = 'cpu'
-        ConfigManager.console_print('Using int8 quantization, forcing CPU usage.')
-    else:
-        device = local_model_options['device']
+    # Upstream forced int8 onto the CPU, which quietly kept every int8 setup off
+    # the GPU even where CTranslate2 supports it - and int8 is the sensible
+    # choice on cards without usable float16, so the rule ruled out exactly the
+    # case it was needed for. The device is honoured as configured; a GPU that
+    # cannot be used still falls back to the CPU below.
+    device = local_model_options['device']
+    ConfigManager.console_print(f'Model device: {device}, compute type: {compute_type}')
 
     try:
         if model_path:
