@@ -6,7 +6,7 @@ rem   * stdout/stderr go to ww_out.log / ww_err.log (both covered by .gitignore)
 rem   * the console stays open and shows stderr plus the tail of stdout on exit.
 rem Live output is not shown while running - read the logs for that.
 chcp 65001 > nul
-cd /d "C:\dev\whisper-writer"
+cd /d "%~dp0"
 set HF_HUB_DISABLE_SYMLINKS_WARNING=1
 set PYTHONIOENCODING=utf-8
 set PYTHONUNBUFFERED=1

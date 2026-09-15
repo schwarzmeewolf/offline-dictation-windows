@@ -4,8 +4,15 @@
 # Tries a graceful close first (works when the main window is on screen); falls
 # back to a forced kill when the app sits in the tray with no visible window.
 
+# Matched on this script's own folder rather than a hardcoded project name,
+# so a clone in any directory is found and another checkout is left alone.
+$root = $PSScriptRoot.TrimEnd('')
+
 $procs = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -like 'python*' -and $_.CommandLine -like '*whisper-writer*main.py*'
+    $_.Name -like 'python*' -and
+    $_.CommandLine -and
+    $_.CommandLine.Contains($root) -and
+    $_.CommandLine -like '*main.py*'
 }
 
 if (-not $procs) {

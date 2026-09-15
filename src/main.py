@@ -1,10 +1,13 @@
-# ВАЖНО: ctranslate2 нужно импортировать ДО PyQt5, иначе на Windows
-# происходит access violation из-за конфликта нативных DLL (OpenMP/runtime).
-# cuda_libs идёт раньше: он тянет только стандартную библиотеку и лишь
-# прописывает в PATH каталоги с CUDA, без которых GPU падает на первом кадре.
+# IMPORTANT: ctranslate2 must be imported BEFORE PyQt5. Both ship their own
+# native runtimes, and on Windows the wrong order ends the process with an
+# access violation before anything can report it. Do not tidy this away.
+#
+# cuda_libs comes first of all, but is not part of that constraint: it pulls in
+# nothing but the standard library and only puts the CUDA directories on PATH,
+# without which a GPU model dies at its first frame.
 import cuda_libs
 cuda_libs.enable()
-import ctranslate2  # noqa: F401  (должен быть первым из нативных)
+import ctranslate2  # noqa: F401  (first of the native imports)
 import faulthandler
 import os
 import sys
@@ -26,6 +29,7 @@ from ui.status_window import StatusWindow
 from transcription import create_local_model
 from input_simulation import InputSimulator
 from utils import ConfigManager
+from version import __version__
 
 
 def attach_log_files():
@@ -164,6 +168,9 @@ class WhisperWriterApp(QObject):
         Create the system tray icon and its context menu.
         """
         self.tray_icon = QSystemTrayIcon(QIcon(os.path.join('assets', 'ww-logo.png')), self.app)
+        # Hovering the tray icon is the one place a running copy can say which
+        # version it is - useful when a bug report has to name one.
+        self.tray_icon.setToolTip(f'WhisperWriter {__version__}')
 
         tray_menu = QMenu()
 
@@ -296,6 +303,7 @@ class WhisperWriterApp(QObject):
 
 if __name__ == '__main__':
     attach_log_files()
-    print(f'--- WhisperWriter started {time.strftime("%Y-%m-%d %H:%M:%S")} ---')
+    print(f'--- WhisperWriter {__version__} started '
+          f'{time.strftime("%Y-%m-%d %H:%M:%S")} ---')
     app = WhisperWriterApp()
     app.run()

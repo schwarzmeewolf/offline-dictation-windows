@@ -24,27 +24,45 @@ def create_local_model():
     device = local_model_options['device']
     ConfigManager.console_print(f'Model device: {device}, compute type: {compute_type}')
 
+    name = model_path or local_model_options['model']
+    if model_path:
+        ConfigManager.console_print(f'Loading model from: {model_path}')
+
     try:
-        if model_path:
-            ConfigManager.console_print(f'Loading model from: {model_path}')
-            model = WhisperModel(model_path,
-                                 device=device,
-                                 compute_type=compute_type,
-                                 download_root=None)  # Prevent automatic download
-        else:
-            model = WhisperModel(local_model_options['model'],
-                                 device=device,
-                                 compute_type=compute_type)
+        model = _build_model(name, device, compute_type, bool(model_path))
     except Exception as e:
-        ConfigManager.console_print(f'Error initializing WhisperModel: {e}')
+        if device == 'cpu':
+            raise
+        ConfigManager.console_print(f'Model on {device} unavailable: {e}')
         ConfigManager.console_print('Falling back to CPU.')
-        model = WhisperModel(model_path or local_model_options['model'],
-                             device='cpu',
-                             compute_type=compute_type,
-                             download_root=None if model_path else None)
+        model = _build_model(name, 'cpu', compute_type, bool(model_path))
 
     ConfigManager.console_print('Local model created.')
     return model
+
+def _build_model(name, device, compute_type, is_path):
+    """
+    Load a model and prove it can actually run.
+
+    Constructing a CUDA model succeeds on a machine with a driver but without
+    the CUDA runtime libraries; it is the first encode that fails, with
+    "Library cublas64_12.dll is not found". Left to itself that turns into a
+    dead dictation halfway through, long after the point where falling back to
+    the CPU was still possible. A two-frame encode settles it at startup, where
+    the fallback is free.
+
+    :param name: model name or a path to a converted model
+    :param device: 'cpu', 'cuda' or 'auto'
+    :param compute_type: quantisation to load the weights with
+    :param is_path: True when name is a local path, so nothing is downloaded
+    :return: a model that has completed one forward pass
+    """
+    model = WhisperModel(name, device=device, compute_type=compute_type,
+                         download_root=None if is_path else None)
+    silence = np.zeros(16000, dtype=np.float32)
+    list(model.transcribe(silence, language='en')[0])
+    return model
+
 
 def _temperature_ladder(temperature):
     """

@@ -184,8 +184,9 @@ class SettingsWindow(BaseWindow):
         return help_button
 
     def get_config_value(self, category, sub_category, key, meta):
-        # Сравнение именно с None: `or` подменял дефолтом схемы любое
-        # falsy-значение (False, 0, ''), и Save писал его обратно в конфиг.
+        # Compared against None, not truthiness: `or` replaced every falsy
+        # value (False, 0, '') with the schema default, and Save then wrote
+        # that default back to disk, silently flipping the setting.
         if sub_category:
             value = ConfigManager.get_config_value(category, sub_category, key)
         else:

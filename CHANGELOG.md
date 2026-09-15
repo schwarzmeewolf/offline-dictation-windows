@@ -4,19 +4,67 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [2.0.0] - 2026-09-15
+
+First release of this fork. Numbering continues from upstream's 1.0.1 rather
+than restarting; the major bump reflects changed startup behaviour and new
+configuration keys, not a rewrite. Everything upstream had left unreleased is
+included and listed below under "From upstream, previously unreleased".
+
 ### Added
+- Microphone gate: the capture device stays shut outside of a dictation, via
+  the Windows capability store and the endpoint mute flag. `tools/mic-guard.ps1`
+  and a Task Scheduler backstop come with it.
+- GPU transcription. `cuda_libs.py` puts the pip-installed CUDA runtime on PATH,
+  without which CTranslate2 loads a model and then dies at the first encode.
+- English and Russian interface, selected by `misc.ui_language`.
+- Log files: under `pythonw.exe` there is no console, so `print()` and every
+  traceback used to vanish. `faulthandler` is enabled for native crashes.
+- Error dialogs naming the cause of a failed dictation.
+- Timeouts: a recording with no speech stops after 25 s, any recording after
+  five minutes.
+- Windows launchers, a duplicate-instance guard and a targeted stop script.
+- A version, shown in the startup log and the tray tooltip.
+
+### Fixed
+- Access violation that killed the process mid-transcription: the cyclic garbage
+  collector released a COM pointer the mute lever had dropped. Pointers are now
+  held for the life of the process.
+- Keyboard hooks leaked on every transcription, each delivering the same key
+  event again.
+- Falsy configuration values were replaced by schema defaults when the settings
+  window was built, and written back to disk on Save.
+- A recording in voice-activity mode could not end if the microphone was silent,
+  leaving the app apparently frozen.
+- Error dialogs quit the application when dismissed.
+- `temperature` was passed as a single number, disabling faster-whisper's retry
+  on a failed decode.
+- A GPU that cannot actually run now falls back to the CPU at startup rather
+  than failing halfway through a dictation.
+
+### Changed
+- Starts listening on launch instead of waiting for a Start button.
+- `import ctranslate2` must precede PyQt5 or Windows raises a fatal access
+  violation; the order is now pinned with a comment saying so.
+- `src/config.yaml` is tracked, because the settings window rewrites it whole.
+
+### From upstream, previously unreleased
+
+Carried over from savbell/whisper-writer, which released 1.0.1 and then
+stopped with this work still unpublished.
+
+#### Added
 - New settings window to configure WhisperWriter.
 - New main window to either start the keyboard listener or open the settings window.
 - New continuous recording mode ([Issue #40](https://github.com/savbell/whisper-writer/issues/40)).
 - New option to play a sound when transcription finishes ([Issue #40](https://github.com/savbell/whisper-writer/issues/40)).
 
-### Changed
+#### Changed
 - Migrated status window from using `tkinter` to `PyQt5`.
 - Migrated from using JSON to using YAML to store configuration settings.
 - Upgraded to latest versions of `openai` and `faster-whisper`, including support for local API ([Issue #32](https://github.com/savbell/whisper-writer/issues/32)).
 
-### Removed
+#### Removed
 - No longer using `keyboard` package to listen for key presses.
 
 ## [1.0.1] - 2024-01-28

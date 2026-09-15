@@ -134,6 +134,12 @@ config.yaml
 # wholesale on Save, so history is the only way back.
 !src/config.yaml
 
-# Local working notes and config backups - kept on disk, never published
+# Local working notes, session snapshots and config backups.
+# Kept on disk, never published: they carry machine paths and the
+# contents of assistant sessions, and a scheduled auto-commit task on
+# this machine would otherwise sweep them into the repository.
 _BRIEF-*.md
 config.yaml.backup-*
+.claude-checkpoints/
+ww_out.log
+ww_err.log
