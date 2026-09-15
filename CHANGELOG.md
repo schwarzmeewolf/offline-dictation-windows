@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+- `src/config.yaml` is no longer tracked. It is written by the settings window
+  and holds one machine's settings, so a tracked copy shipped the installer's
+  language, model and hotkey to every clone and left that clone permanently
+  modified. Defaults moved into `config_schema.yaml`, where this fork's tuned
+  values now live: VAD recording with a 2 s end-of-speech pause, a single
+  activation key, `int8_float32`, and no conditioning on previous text. A
+  missing config file was already handled - the first run opens settings.
+
+### Added
+- Saving settings keeps the previous file as `config.yaml.backup-<date>`, five
+  most recent. The save is wholesale, and until now nothing survived it.
+
 ## [2.0.0] - 2026-09-15
 
 First release of this fork. Numbering continues from upstream's 1.0.1 rather

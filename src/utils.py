@@ -1,5 +1,9 @@
-import yaml
+import glob
 import os
+import shutil
+import time
+
+import yaml
 
 class ConfigManager:
     _instance = None
@@ -113,11 +117,50 @@ class ConfigManager:
 
     @classmethod
     def save_config(cls, config_path=os.path.join('src', 'config.yaml')):
-        """Save the current configuration to a YAML file."""
+        """
+        Save the current configuration to a YAML file.
+
+        The write is wholesale: yaml.dump emits the settings the app is holding
+        and nothing else, so hand-written comments in the file are gone and any
+        value the settings window failed to round-trip is gone with them. Keep
+        a dated copy of what was there before, so a bad save is recoverable.
+        """
         if cls._instance is None:
             raise RuntimeError("ConfigManager not initialized")
+
+        cls._backup_config(config_path)
+
         with open(config_path, 'w') as file:
             yaml.dump(cls._instance.config, file, default_flow_style=False)
+
+    # How many dated backups to keep. Each one is under two kilobytes, and a
+    # mistake usually shows up within a day or two of making it.
+    _BACKUP_KEEP = 5
+
+    @classmethod
+    def _backup_config(cls, config_path):
+        """
+        Copy the existing config aside before it is overwritten.
+
+        One backup per day: the first save of the day preserves the state the
+        day started in, which is the version worth going back to. Failure here
+        must never block a save - a read-only folder loses the safety net, not
+        the setting the user just changed.
+        """
+        if not os.path.isfile(config_path):
+            return
+
+        stamp = time.strftime('%Y-%m-%d')
+        backup = f'{config_path}.backup-{stamp}'
+        try:
+            if not os.path.exists(backup):
+                shutil.copy2(config_path, backup)
+
+            older = sorted(glob.glob(f'{config_path}.backup-*'), reverse=True)
+            for stale in older[cls._BACKUP_KEEP:]:
+                os.remove(stale)
+        except OSError as e:
+            print(f'Could not back up the configuration: {e}')
 
     @classmethod
     def reload_config(cls):

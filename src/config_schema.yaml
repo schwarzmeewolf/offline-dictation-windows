@@ -38,9 +38,9 @@ model_options:
   # Configuration options for the faster-whisper model
   local:
     model:
-      value: base
+      value: small
       type: str
-      description: "The model to use for transcription. The larger models provide better accuracy but are slower."
+      description: "The model to use for transcription. Larger models are more accurate. On a GPU, large-v3 is both more accurate and faster than small on the CPU - see the README. small is the default only because it stays usable on a machine without one."
       options:
         - base
         - base.en
@@ -63,9 +63,9 @@ model_options:
         - cuda
         - cpu
     compute_type:
-      value: default
+      value: int8_float32
       type: str
-      description: "The compute type to use for the local Whisper model."
+      description: "The numeric precision to run the model in. int8_float32 works on every CPU and every CUDA card, which is why it is the default. float16 is faster, but cards older than Turing - GTX 10-series and earlier - cannot run it; the app tests the model at startup and falls back to the CPU if the combination does not work."
       options:
         - default
         - float32
@@ -74,11 +74,11 @@ model_options:
         - int8_float32
         - int8_float16
     condition_on_previous_text:
-      value: true
-      type: bool
-      description: "Set to true to use the previously transcribed text as a prompt for the next transcription request."
-    vad_filter:
       value: false
+      type: bool
+      description: "Set to true to use the previously transcribed text as a prompt for the next transcription request. Off by default here: dictation arrives as separate short utterances, and carrying context between them invites repetition loops."
+    vad_filter:
+      value: true
       type: bool
       description: "Set to true to use a voice activity detection (VAD) filter to remove silence from the recording."
     model_path:
@@ -89,9 +89,9 @@ model_options:
 # Configuration options for activation and recording
 recording_options:
   activation_key:
-    value: ctrl+shift+space
+    value: pause
     type: str
-    description: "The keyboard shortcut to activate the recording and transcribing process. Separate keys with a '+'."
+    description: "The key or shortcut that starts a dictation. Separate keys with a '+'. A single key avoids the modifier combinations Windows and keyboard-layout switchers have already claimed - see 'Choosing an activation key' in the README. Laptops without a Pause key should pick another one on first run."
   input_backend:
     value: auto
     type: str
@@ -101,7 +101,7 @@ recording_options:
       - evdev
       - pynput
   recording_mode:
-    value: continuous
+    value: voice_activity_detection
     type: str
     description: "The recording mode to use. Options include continuous (auto-restart recording after pause in speech until activation key is pressed again), voice_activity_detection (stop recording after pause in speech), press_to_toggle (stop recording when activation key is pressed again), hold_to_record (stop recording when activation key is released)."
     options:
@@ -118,9 +118,9 @@ recording_options:
     type: int
     description: "The sample rate in Hz to use for recording."
   silence_duration:
-    value: 900
+    value: 2000
     type: int
-    description: "The duration in milliseconds to wait for silence before stopping the recording."
+    description: "The duration in milliseconds to wait for silence before stopping the recording. 2000 leaves room to think mid-sentence; shorter values cut people off and split one thought into two dictations."
   min_duration:
     value: 100
     type: int

@@ -128,11 +128,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Configuration files
+# Configuration files.
+#
+# src/config.yaml is per-machine state, not source: the settings window
+# rewrites it on Save, so a tracked copy would leave every clone permanently
+# modified and turn a pull into a conflict. Defaults live in
+# src/config_schema.yaml instead, and a missing config file is not an error -
+# the first run opens the settings window.
 config.yaml
-# ...but keep the working config in git: the settings window rewrites it
-# wholesale on Save, so history is the only way back.
-!src/config.yaml
 
 # Local working notes, session snapshots and config backups.
 # Kept on disk, never published: they carry machine paths and the

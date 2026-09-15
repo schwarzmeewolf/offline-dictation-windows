@@ -325,27 +325,52 @@ launcher `.bat` files handle this with `cd /d`.
 The bundled `.bat` files derive every path from their own location, so the project
 can live anywhere and a desktop shortcut still works.
 
-It loads the model, starts listening and stays in the tray — no window to dismiss,
-no button to press. The main window is still reachable from the tray menu; note
+On first run there is no `src/config.yaml` yet, so the settings window opens;
+Save writes it and restarts into it. After that the app loads the model, starts
+listening and stays in the tray — no window to dismiss, no button to press. The main window is still reachable from the tray menu; note
 that closing it with the `×` **quits the application** rather than hiding it.
 
 ## Configuration
 
-`src/config.yaml` overrides `src/config_schema.yaml`, which documents every option
-and its allowed values. The settings in daily use here:
+There are two files, and the split matters:
+
+| File | What it is | In git? |
+| --- | --- | --- |
+| `src/config_schema.yaml` | every option, its allowed values, and the default | yes |
+| `src/config.yaml` | the settings on *this* machine | no |
+
+`config.yaml` is written by the settings window, not by hand, and it is ignored
+by git on purpose. Tracking it would mean shipping one person's language, model
+and hotkey to everyone who clones, and leaving every clone permanently modified
+the moment its owner changed a setting.
+
+A missing `config.yaml` is not an error. On first run the app opens the settings
+window, filled in from the schema; Save writes the file and restarts into it.
+Saving also keeps a dated copy of the previous file — `config.yaml.backup-<date>`,
+five most recent — because the save is wholesale and drops anything it did not
+round-trip.
+
+The defaults are this fork's, not upstream's:
 
 ```yaml
 model_options:
-  use_api: false
-  common:  { language: ru, initial_prompt: null }
-  local:   { model: small, device: cpu, compute_type: int8,
+  local:   { model: small, device: auto, compute_type: int8_float32,
              condition_on_previous_text: false, vad_filter: true }
 recording_options:
   activation_key: pause
   recording_mode: voice_activity_detection
   silence_duration: 2000    # pause that ends a recording, ms
-  min_duration: 100
 ```
+
+Two of them are deliberately *not* set to what this machine runs:
+
+- **`model: small`, not `large-v3`.** On a GPU, large-v3 wins on accuracy and
+  speed both (see the table above) — but on a machine without one it is
+  unusable, and the default has to work everywhere. Switch it in the settings
+  window once you know you have a GPU.
+- **`mic_gate: off`.** The gate closes the microphone for *every* application,
+  not just this one. That is a system-wide change to make knowingly, so it stays
+  opt-in. Turn it on in Settings → Security once you have read what it does.
 
 Two traps worth knowing:
 
