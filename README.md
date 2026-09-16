@@ -193,6 +193,16 @@ Widgets read their text once, when they are built, so the language takes effect
 on the next start. Saving settings already restarts the app, which is the only
 way the setting can change.
 
+<p align="center">
+  <img src="assets/screenshot-status-ru.png" alt="The status window in Russian" width="320">
+  &nbsp;&nbsp;
+  <img src="assets/screenshot-status-en.png" alt="The status window in English" width="320">
+</p>
+
+<p align="center">
+  <img src="assets/screenshot-settings-ru.png" alt="The settings window in Russian" width="620">
+</p>
+
 ### Switching the dictation language, and dictating across one
 
 The interface language and the dictated language are separate settings, and the
