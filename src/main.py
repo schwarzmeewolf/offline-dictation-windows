@@ -16,7 +16,8 @@ from audioplayer import AudioPlayer
 from pynput.keyboard import Controller
 from PyQt5.QtCore import QObject, QProcess
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QAction, QMessageBox
+from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QMenu,
+                             QMessageBox, QSystemTrayIcon)
 
 import i18n
 import mic_gate
@@ -83,6 +84,15 @@ MESSAGE_BOX_STYLE = """
     QMessageBox QPushButton:hover { background-color: #ffec99; }
     QMessageBox QPushButton:pressed { background-color: #f5d949; }
 """
+
+
+# Offered in the tray. The value is what Whisper is told to write, which is
+# not necessarily what is being spoken: given a language, the model produces
+# text in that language, translating if it has to. Speaking English with this
+# set to Russian therefore yields Russian text - approximately, and with no
+# guarantees, but it works often enough to be worth reaching for on purpose.
+# None lets the model decide from the audio.
+DICTATION_LANGUAGES = ((None, 'Auto-detect'), ('en', 'English'), ('ru', 'Russian'))
 
 
 def show_message(icon, text):
@@ -169,14 +179,19 @@ class WhisperWriterApp(QObject):
         """
         self.tray_icon = QSystemTrayIcon(QIcon(os.path.join('assets', 'ww-logo.png')), self.app)
         # Hovering the tray icon is the one place a running copy can say which
-        # version it is - useful when a bug report has to name one.
-        self.tray_icon.setToolTip(f'WhisperWriter {__version__}')
+        # version it is - useful when a bug report has to name one - and which
+        # language it is about to write in, which changes without any window
+        # being open to show it.
+        self.update_tray_tooltip()
 
         tray_menu = QMenu()
 
         show_action = QAction(tr('WhisperWriter Main Menu'), self.app)
         show_action.triggered.connect(self.main_window.show)
         tray_menu.addAction(show_action)
+
+        self.language_menu = self.create_language_menu()
+        tray_menu.addMenu(self.language_menu)
 
         settings_action = QAction(tr('Open Settings'), self.app)
         settings_action.triggered.connect(self.settings_window.show)
@@ -188,6 +203,56 @@ class WhisperWriterApp(QObject):
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
+
+    def create_language_menu(self):
+        """
+        Build the dictation-language submenu.
+
+        Switching costs nothing: transcription.py reads the language on every
+        dictation, and the multilingual model needs no reloading, so this does
+        not go through the settings window and its restart.
+
+        The choice lasts for the session. The config file keeps the language
+        this machine usually dictates in, and a restart returns to it.
+        """
+        menu = QMenu(tr('Dictation language'))
+        group = QActionGroup(self.app)
+        group.setExclusive(True)
+
+        current = ConfigManager.get_config_value('model_options', 'common', 'language')
+        choices = list(DICTATION_LANGUAGES)
+        # A language set by hand in the config - anything beyond the two this
+        # interface speaks - would otherwise vanish from the menu, and picking
+        # any entry would silently discard it.
+        if current not in [code for code, _ in choices]:
+            choices.append((current, current))
+
+        for code, label in choices:
+            action = QAction(tr(label), self.app)
+            action.setCheckable(True)
+            action.setChecked(code == current)
+            action.triggered.connect(lambda _, c=code: self.set_dictation_language(c))
+            group.addAction(action)
+            menu.addAction(action)
+
+        return menu
+
+    def set_dictation_language(self, code):
+        """
+        Change the language the next dictation will be written in.
+
+        :param code: ISO-639-1 code, or None to detect it from the audio
+        """
+        ConfigManager.set_config_value(code, 'model_options', 'common', 'language')
+        ConfigManager.console_print(f'Dictation language: {code or "auto-detect"}')
+        self.update_tray_tooltip()
+
+    def update_tray_tooltip(self):
+        """Keep the hover text showing which language is active."""
+        code = ConfigManager.get_config_value('model_options', 'common', 'language')
+        labels = dict(DICTATION_LANGUAGES)
+        name = tr(labels[code]) if code in labels else code
+        self.tray_icon.setToolTip(f'WhisperWriter {__version__} - {name}')
 
     def cleanup(self):
         mic_gate.close()

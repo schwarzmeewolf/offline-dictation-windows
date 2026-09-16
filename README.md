@@ -193,6 +193,35 @@ Widgets read their text once, when they are built, so the language takes effect
 on the next start. Saving settings already restarts the app, which is the only
 way the setting can change.
 
+### Switching the dictation language, and dictating across one
+
+The interface language and the dictated language are separate settings, and the
+second one changes far more often — anyone working in two languages switches
+several times a day. Upstream puts it in the settings window, where saving
+restarts the application and reloads the model, which is too much ceremony to
+perform between two sentences.
+
+It is also unnecessary. `transcription.py` reads the language on every dictation
+and the multilingual model is the same model whatever the answer, so the tray
+menu now offers **Dictation language** — auto-detect, English, Russian — and the
+next dictation obeys it. No restart, no reload, and the tray tooltip shows which
+one is active. The choice lasts for the session; the config file keeps the
+language this machine usually works in, and a restart returns to it.
+
+Worth knowing, because it is easy to trip over and occasionally useful on
+purpose: **this setting is the language Whisper writes in, not a filter on what
+it hears.** Speak English with Russian selected and you get Russian text — the
+model bridges the gap by translating. It is not a translator and makes no
+promises: given clean audio it often transcribes the spoken language instead,
+so treat the behaviour as available rather than reliable. Whisper's documented
+translation mode only ever targets English; this is the other direction, and it
+arrived by accident.
+
+Auto-detect has its own edge: on accented speech the reported language can be
+wrong while the text is right — English spoken with a Russian accent was
+measured here as `ru` with probability 0.81, transcribed correctly as English.
+Naming the language explicitly is the way to be certain of the output.
+
 ### Text arrives as the words that were said
 
 Windows keyboard input carries a *key position*, not a letter — the receiving
@@ -263,7 +292,7 @@ Where things live:
 
 | File | Responsibility |
 | --- | --- |
-| `src/main.py` | wiring, tray icon, error dialogs, log files |
+| `src/main.py` | wiring, tray icon and its language switch, error dialogs, log files |
 | `src/result_thread.py` | recording loop, voice activity detection, timeouts |
 | `src/transcription.py` | model creation, device fallback, decoding |
 | `src/mic_gate.py` | the microphone privacy gate |

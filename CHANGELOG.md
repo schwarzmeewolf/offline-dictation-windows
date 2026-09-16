@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Dictation language in the tray menu - auto-detect, English, Russian - taking
+  effect on the next dictation. It needed neither the settings window nor a
+  restart: the language is read per dictation and the multilingual model is the
+  same model either way. The choice lasts for the session; the config file keeps
+  the machine's usual language. The tray tooltip names the active one.
+
+  Documented alongside it, because it surfaced by accident and is easy to
+  mistake for a bug: the setting is the language Whisper *writes*, not a filter
+  on what it hears. Speaking English while Russian is selected yields Russian
+  text - the model translates to reach the language it was told to produce.
+  Unreliable (clean audio is often transcribed as spoken instead) but real, and
+  in the direction Whisper's documented translation mode does not offer, that
+  mode targeting English only.
+- Saving settings keeps the previous file as `config.yaml.backup-<date>`,
+  five most recent. The save is wholesale, and until now nothing survived
+  it.
+
 ### Fixed
 - Dictated punctuation arrived as the wrong characters. Windows keyboard input
   carries a key position, not a letter, and pynput resolves a character to a
@@ -24,10 +42,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   values now live: VAD recording with a 2 s end-of-speech pause, a single
   activation key, `int8_float32`, and no conditioning on previous text. A
   missing config file was already handled - the first run opens settings.
-
-### Added
-- Saving settings keeps the previous file as `config.yaml.backup-<date>`, five
-  most recent. The save is wholesale, and until now nothing survived it.
 
 ## [2.0.0] - 2026-09-15
 

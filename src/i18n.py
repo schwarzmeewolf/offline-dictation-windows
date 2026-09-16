@@ -29,6 +29,10 @@ _RUSSIAN = {
     'WhisperWriter Main Menu': 'Главное меню WhisperWriter',
     'Open Settings': 'Открыть настройки',
     'Exit': 'Выход',
+    'Dictation language': 'Язык диктовки',
+    'Auto-detect': 'Определять по речи',
+    'English': 'Английский',
+    'Russian': 'Русский',
 
     # --- settings window chrome ---
     'Reset to saved settings': 'Вернуть сохранённые значения',
