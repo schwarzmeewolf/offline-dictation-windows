@@ -8,7 +8,7 @@ keys, startup behaviour, the microphone gate - that a major bump is the honest
 signal to anyone upgrading.
 """
 
-__version__ = '2.0.0'
+__version__ = '2.0.1'
 
 # The upstream release this fork started from, so the lineage stays checkable
 # even after the histories have drifted apart.
