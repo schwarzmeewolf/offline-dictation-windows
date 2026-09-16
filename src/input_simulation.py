@@ -4,6 +4,7 @@ import signal
 import time
 from pynput.keyboard import Controller as PynputController
 
+import win_input
 from utils import ConfigManager
 
 def run_command_or_exit_on_failure(command):
@@ -33,6 +34,10 @@ class InputSimulator:
 
         if self.input_method == 'pynput':
             self.keyboard = PynputController()
+            # On Windows, prefer sending the characters themselves over
+            # pynput's key positions, which the receiving window decodes
+            # through its own keyboard layout. See win_input's docstring.
+            self.use_win_input = win_input.available()
         elif self.input_method == 'dotool':
             self._initialize_dotool()
 
@@ -60,6 +65,17 @@ class InputSimulator:
         """
         interval = ConfigManager.get_config_value('post_processing', 'writing_key_press_delay')
         if self.input_method == 'pynput':
+            if self.use_win_input:
+                try:
+                    win_input.typewrite(text, interval)
+                    return
+                except OSError as e:
+                    # Windows refused the injection - most often because the
+                    # focused window runs elevated. pynput will not get through
+                    # either, but say so once rather than failing in silence,
+                    # and stop paying for the attempt on every dictation.
+                    print(f'Unicode input refused ({e}); falling back to pynput.')
+                    self.use_win_input = False
             self._typewrite_pynput(text, interval)
         elif self.input_method == 'ydotool':
             self._typewrite_ydotool(text, interval)
@@ -69,6 +85,11 @@ class InputSimulator:
     def _typewrite_pynput(self, text, interval):
         """
         Simulate typing using pynput.
+
+        Kept for platforms other than Windows, and as the fallback when the
+        Unicode path is refused. Note that on Windows this mangles any
+        character the sending layout can type without a modifier whenever the
+        receiving window is in a different layout.
 
         Args:
             text (str): The text to type.

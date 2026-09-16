@@ -147,7 +147,7 @@ post_processing:
   input_method:
     value: pynput
     type: str
-    description: "The method to use for simulating keyboard input."
+    description: "How to put the transcribed text into the focused window. On Windows, 'pynput' sends the characters themselves rather than key positions, so the text does not change meaning when the target window is in another keyboard layout; ydotool and dotool are Linux tools."
     options:
       - pynput
       - ydotool

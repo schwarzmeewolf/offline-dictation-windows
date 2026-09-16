@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Dictated punctuation arrived as the wrong characters. Windows keyboard input
+  carries a key position, not a letter, and pynput resolves a character to a
+  key using the sending process's layout; the receiving window then decodes
+  that position with its own. Typing into a Russian-layout window from a US
+  layout turned every comma into "б" and every period into "ю", and in the
+  other direction Cyrillic came out as Latin - "Hello, world." arrived as
+  "Hуддщб цщкдвю". Text now goes through SendInput as Unicode, which no
+  layout can reinterpret. Verified in both directions against a live window.
+
 ### Changed
 - `src/config.yaml` is no longer tracked. It is written by the settings window
   and holds one machine's settings, so a tracked copy shipped the installer's

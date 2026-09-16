@@ -193,6 +193,37 @@ Widgets read their text once, when they are built, so the language takes effect
 on the next start. Saving settings already restarts the app, which is the only
 way the setting can change.
 
+### Text arrives as the words that were said
+
+Windows keyboard input carries a *key position*, not a letter — the receiving
+window decides what the position means by running it through its own keyboard
+layout. pynput types a character by asking `VkKeyScan` which key produces it
+**under the sending process's layout**, and when that key needs no modifier it
+injects the key. Character in, key position out.
+
+The two sides agree only while they are in the same layout, and dictation types
+into whatever window happens to be in front:
+
+```
+sent from a US layout, into a Russian-layout window
+  "Пункт, ещё раз. Hello, world."   ->   "Пунктб ещё разю Hуддщб цщкдвю"
+
+sent from a Russian layout, into a US-layout window
+  "Пункт, ещё раз. Hello, world."   ->   "tuПeyrnj, to` hfp/ Hello, wo rld/"
+```
+
+Not a transcription error — the model had produced the sentence correctly, and
+the text was mangled on its way into the window. Cyrillic survived the first
+case only by accident: `VkKeyScan` cannot place "п" on a US layout, so pynput
+fell back to sending the character itself. Which is what `win_input.py` now
+does for everything, through `SendInput` with `KEYEVENTF_UNICODE`: the
+character is the payload, and no layout is left in the path to reinterpret it.
+
+pynput remains the fallback for other platforms, and for the case where Windows
+refuses the injection outright — a window running elevated, where no simulated
+input of any kind gets through. That refusal is now reported instead of
+appearing as text that silently never arrives.
+
 ### Windows integration
 
 - `start-dictation.bat` — launcher; refuses to start a second instance.
@@ -201,8 +232,7 @@ way the setting can change.
   programs are never touched.
 - `debug-dictation.bat` — debug launcher: real console, both streams to log files,
   window stays open and prints stderr on exit.
-- `src/config.yaml` is tracked in git. Upstream ignores it, but the settings window
-  rewrites the whole file on Save, so version history is the only way back.
+- Settings are per machine and stay out of git; saving them keeps a dated backup.
 
 ---
 
@@ -225,7 +255,9 @@ One dictation, end to end:
    the block raises.
 6. `transcription.py` hands the samples to faster-whisper — CPU or GPU — and
    post-processes the text.
-7. `input_simulation.py` types the result into the focused window.
+7. `input_simulation.py` types the result into the focused window — as
+   characters, via `win_input.py`, so the keyboard layout of that window cannot
+   change what was said.
 
 Where things live:
 
@@ -236,6 +268,7 @@ Where things live:
 | `src/transcription.py` | model creation, device fallback, decoding |
 | `src/mic_gate.py` | the microphone privacy gate |
 | `src/cuda_libs.py` | makes the pip-installed CUDA runtime loadable |
+| `src/win_input.py` | layout-independent typing via `SendInput` |
 | `src/i18n.py` | the English/Russian catalogue |
 | `src/key_listener.py` | keyboard backends and shortcut parsing |
 | `src/ui/` | the frameless windows and the settings form |
@@ -412,6 +445,8 @@ begins with a `--- WhisperWriter started <timestamp> ---` line.
 | `Library cublas64_12.dll is not found` | The CUDA wheels are missing, or `cuda_libs.enable()` did not run before the model was built. |
 | Log says `Falling back to CPU` | The GPU could not complete a test encode. Transcription still works, just slower. |
 | App vanishes mid-transcription | Look for a `Windows fatal exception` block in `ww_err.log`; the faulthandler stack names the thread and the call. |
+| Text typed as gibberish | On a build predating `win_input.py`, this is the keyboard-layout mismatch described above rather than a transcription error. The `Post-processed line:` entry in `ww_out.log` shows what the model actually produced - compare the two. |
+| Log says `Unicode input refused` | The focused window runs at a higher integrity level than this app - an elevated editor, say. No simulated input reaches it; run the app elevated too, or dictate elsewhere. |
 
 To watch it run with a console attached:
 
