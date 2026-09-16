@@ -313,6 +313,37 @@ Where things live:
 | `src/ui/` | the frameless windows and the settings form |
 | `tools/` | microphone guard script and its scheduled task |
 
+## Platform support
+
+This is a Windows fork and Windows is where it is used and tested. Upstream was
+cross-platform, and the parts this fork added had quietly taken that away: the
+microphone gate imported `winreg` at module level, and `main.py` imports the
+gate unconditionally, so the application stopped on its first import anywhere
+else. The Windows-specific modules are now guarded and inert elsewhere.
+
+| | Windows | Linux |
+| --- | --- | --- |
+| Starts, records, transcribes, types | yes | expected, not yet run end to end |
+| Layout-independent typing (`win_input.py`) | yes | not needed; pynput, or ydotool on Wayland |
+| Microphone gate | yes | **no** — says so in the log and stays inert |
+| GPU helper (`cuda_libs.py`) | yes | no — falls back to the CPU at startup |
+| Launchers | `.bat` / `.ps1` | none yet |
+
+What was actually verified on Linux, under Python 3.10 on Ubuntu 22.04: every
+module that touches Windows imports, `mic_gate` reports `supported: False` and
+its open, close and session calls return without raising, `win_input.typewrite`
+refuses with a clear message rather than a `NameError`, and `cuda_libs.enable()`
+finds nothing and says so. The application itself has **not** been run there —
+PyQt5 and CTranslate2 were not installed — so the first row above is a
+reasonable expectation, not a measurement.
+
+Three things stand between that and a working Linux version: launcher scripts,
+a `ctypes.CDLL` equivalent of the CUDA helper (the dynamic loader reads
+`LD_LIBRARY_PATH` at process start, so the Windows trick of editing it from
+inside the process cannot work), and a microphone gate built on PipeWire, which
+is a different design rather than a port — the Windows capability broker has no
+counterpart.
+
 ## Requirements
 
 Tested on Windows 11 with **Python 3.11**. Newer Pythons may work, but 3.11 is what

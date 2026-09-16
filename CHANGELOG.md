@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Fixed
+- The application could not start on anything but Windows. `mic_gate` imported
+  `winreg` at module level and `main.py` imports the gate unconditionally, so
+  the very first import ended the process; `win_input` loaded user32 through
+  `ctypes.WinDLL`, which does not exist elsewhere. Both are guarded now and the
+  modules import anywhere. The gate reports `supported: False`, says so in the
+  log when a config asks for a gate it cannot provide - believing the
+  microphone is shut when it is open being the one failure worth shouting about
+  - and its open, close and session calls do nothing instead of raising.
+  Verified under Python 3.10 on Ubuntu 22.04.
+
+  This restores something upstream had and this fork had taken away rather than
+  adding a Linux port. There is no Linux launcher, no GPU support there, and no
+  equivalent of the microphone gate; README's new "Platform support" section
+  says exactly what was measured and what was only assumed.
+
 ## [2.0.1] - 2026-09-16
 
 ### Added

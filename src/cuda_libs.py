@@ -14,7 +14,15 @@ the newer search flags, and CTranslate2's does not. Prepending the directories
 to PATH does, because that is one of the places a plain LoadLibrary looks.
 
 Harmless when there is no GPU and no wheels: the directories simply do not
-exist and nothing is added.
+exist and nothing is added - and equally harmless off Windows, where the glob
+matches nothing because the wheels lay their libraries out differently.
+
+That harmlessness is not a Linux implementation, though. The same problem
+exists there and needs a different answer: the dynamic loader reads
+LD_LIBRARY_PATH once when the process starts, so setting it from inside a
+running Python is already too late, and the libraries have to be pulled in
+directly with ctypes.CDLL instead. Until that is written, a GPU on Linux falls
+back to the CPU at startup like any other unusable device.
 """
 
 import glob

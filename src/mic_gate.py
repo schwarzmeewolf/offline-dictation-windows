@@ -23,14 +23,27 @@ guarantee remains the hardware mute button on the microphone itself.
 Nothing in here may break dictation. Every failure is logged and swallowed: a
 gate that cannot close is a privacy problem, but a gate that raises is a broken
 application.
+
+Both levers are Windows mechanisms with no counterpart elsewhere - the
+capability broker does not exist on Linux, and the endpoint mute flag is a
+WASAPI notion. On any other platform this module reports itself unsupported and
+does nothing, rather than importing `winreg` and taking the whole application
+down at startup. A configured gate that cannot run says so once in the log
+instead of failing quietly, since believing the microphone is shut when it is
+open is the one outcome worth shouting about.
 """
 
 import atexit
-import winreg
+import sys
 from contextlib import contextmanager
 from threading import Lock
 
 from utils import ConfigManager
+
+SUPPORTED = sys.platform == 'win32'
+
+if SUPPORTED:
+    import winreg
 
 _CONSENT_PATH = (r'Software\Microsoft\Windows\CurrentVersion'
                  r'\CapabilityAccessManager\ConsentStore\microphone')
@@ -41,6 +54,10 @@ _DENY = 'Deny'
 # touch a system the user never asked us to touch.
 _engaged = False
 
+# So the "this platform cannot do it" notice appears once per run rather than
+# on every call to _mode(), which every open and close makes.
+_warned = False
+
 
 def _log(message):
     try:
@@ -50,18 +67,35 @@ def _log(message):
 
 
 def _mode():
-    """Return the configured gate mode: 'off', 'mute', 'consent' or 'both'."""
+    """
+    Return the effective gate mode: 'off', 'mute', 'consent' or 'both'.
+
+    Always 'off' where the levers do not exist, whatever the config asks for.
+    Every other function in this module branches on the answer, so one check
+    here is what keeps the Windows-only calls unreachable elsewhere.
+    """
     try:
         mode = ConfigManager.get_config_value('security', 'mic_gate')
     except Exception:
         return 'off'
-    return (mode or 'off').strip().lower()
+    mode = (mode or 'off').strip().lower()
+
+    if not SUPPORTED and mode != 'off':
+        global _warned
+        if not _warned:
+            _warned = True
+            _log(f'mic_gate is set to {mode!r}, but the gate is Windows-only. '
+                 f'The microphone is NOT being closed on this platform.')
+        return 'off'
+    return mode
 
 
 # --- consent lever -------------------------------------------------------
 
 def _write_consent(value):
     """Set the capability-access verdict for desktop and packaged apps alike."""
+    if not SUPPORTED:
+        return
     for subpath in (_CONSENT_PATH, _CONSENT_PATH + r'\NonPackaged'):
         try:
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, subpath, 0,
@@ -72,7 +106,9 @@ def _write_consent(value):
 
 
 def read_consent():
-    """Return the current verdict, or None if the key cannot be read."""
+    """Return the current verdict, or None if it cannot be read."""
+    if not SUPPORTED:
+        return None
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _CONSENT_PATH) as key:
             return winreg.QueryValueEx(key, 'Value')[0]
@@ -203,7 +239,8 @@ def recording_session():
 
 def status():
     """Human-readable state, for the settings UI and the audit script."""
-    return {'mode': _mode(), 'consent': read_consent(), 'muted': read_mute()}
+    return {'mode': _mode(), 'consent': read_consent(), 'muted': read_mute(),
+            'supported': SUPPORTED}
 
 
 @atexit.register
