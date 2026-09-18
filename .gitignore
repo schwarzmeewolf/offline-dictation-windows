@@ -142,6 +142,7 @@ config.yaml
 # contents of assistant sessions, and a scheduled auto-commit task on
 # this machine would otherwise sweep them into the repository.
 _BRIEF-*.md
+_СПРАВКА-*.md
 config.yaml.backup-*
 .claude-checkpoints/
 ww_out.log

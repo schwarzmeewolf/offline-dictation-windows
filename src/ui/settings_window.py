@@ -153,7 +153,12 @@ class SettingsWindow(BaseWindow):
     def create_combobox(self, value, options):
         widget = QComboBox()
         widget.addItems(options)
-        widget.setCurrentText(value)
+        # YAML 1.1 reads a bare off/on/yes/no as a boolean, so a hand-edited
+        # `mic_gate: off` arrives here as False - and a non-string used to crash
+        # the whole application at startup. Map it back to the option it meant.
+        if isinstance(value, bool):
+            value = {False: 'off', True: 'on'}[value]
+        widget.setCurrentText('' if value is None else str(value))
         return widget
 
     def create_line_edit(self, value, key=None):
