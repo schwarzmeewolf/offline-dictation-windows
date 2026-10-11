@@ -1,3 +1,4 @@
+import sys
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Callable, Set
@@ -760,6 +761,7 @@ class PynputBackend(InputBackend):
         self.keyboard = None
         self.mouse = None
         self.key_map = None
+        self.vk_map = None
 
     def start(self):
         """Start listening for keyboard and mouse events."""
@@ -768,6 +770,7 @@ class PynputBackend(InputBackend):
             self.keyboard = keyboard
             self.mouse = mouse
             self.key_map = self._create_key_map()
+            self.vk_map = self._create_vk_map()
 
         # start() is called again after every transcription. Without this the
         # previous hooks keep running unreferenced, and each one delivers the
@@ -793,26 +796,57 @@ class PynputBackend(InputBackend):
             self.mouse_listener.stop()
             self.mouse_listener = None
 
-    def _translate_key_event(self, native_event) -> tuple[KeyCode, InputEvent]:
-        """Translate a pynput event to our internal event representation."""
+    def _translate_key_event(self, native_event) -> tuple[KeyCode | None, InputEvent | None]:
+        """
+        Translate a pynput event to our internal event representation.
+
+        A key this backend cannot name is reported as nothing at all, the way
+        the evdev backend has always reported it. Until this returned SPACE
+        instead, which made every unrecognised key press look like a press of
+        the space bar: an activation combination containing SPACE then fired
+        from key combinations that merely shared its modifiers, opening the
+        microphone and typing into whatever window was in front.
+        """
         pynput_key, is_press = native_event
-        key_code = self.key_map.get(pynput_key, KeyCode.SPACE)
+        key_code = self._resolve_key(pynput_key)
+        if key_code is None:
+            return None, None
         event_type = InputEvent.KEY_PRESS if is_press else InputEvent.KEY_RELEASE
         return key_code, event_type
 
+    def _resolve_key(self, pynput_key) -> KeyCode | None:
+        """
+        Name the key behind a pynput event, or return None if we cannot.
+
+        The character a key produces is not a property of the key: it comes
+        from the layout in force at that moment, and from the modifiers held
+        down. The virtual key code is the key itself, so it is asked second -
+        it is what keeps a letter combination working after the layout is
+        switched to Cyrillic, and with Shift or Caps Lock held.
+        """
+        key_code = self.key_map.get(pynput_key)
+        if key_code is not None:
+            return key_code
+
+        return self.vk_map.get(getattr(pynput_key, 'vk', None))
+
     def _on_keyboard_press(self, key):
         """Handle keyboard press events."""
-        translated_event = self._translate_key_event((key, True))
-        self.on_input_event(translated_event)
+        self._deliver(self._translate_key_event((key, True)))
 
     def _on_keyboard_release(self, key):
         """Handle keyboard release events."""
-        translated_event = self._translate_key_event((key, False))
-        self.on_input_event(translated_event)
+        self._deliver(self._translate_key_event((key, False)))
 
     def _on_mouse_click(self, x, y, button, pressed):
         """Handle mouse click events."""
-        translated_event = self._translate_key_event((button, pressed))
+        self._deliver(self._translate_key_event((button, pressed)))
+
+    def _deliver(self, translated_event):
+        """Pass on a translated event, unless it is one we could not name."""
+        key_code, event_type = translated_event
+        if key_code is None or event_type is None:
+            return
         self.on_input_event(translated_event)
 
     def _create_key_map(self):
@@ -958,6 +992,39 @@ class PynputBackend(InputBackend):
             self.mouse.Button.right: KeyCode.MOUSE_RIGHT,
             self.mouse.Button.middle: KeyCode.MOUSE_MIDDLE,
         }
+
+    @staticmethod
+    def _create_vk_map():
+        """
+        Map virtual key codes to our internal KeyCode enum, where we can.
+
+        The map above is keyed by the character a key produces, which is why
+        it misses the same key under another layout: the key marked M makes
+        "m" on a US layout and "ь" on a Russian one, and only the first is
+        listed. Windows numbers these keys after their ASCII character - the
+        letter keys are 0x41 to 0x5A and the digit keys 0x30 to 0x39, whatever
+        a layout prints on them - so the key itself can be recognised without
+        consulting the layout at all.
+
+        Only Windows numbers keys this way. X11 and macOS use their own
+        numbering, in which these values mean something else entirely, so
+        there the map stays empty and lookups fall through to None.
+
+        Punctuation is deliberately left out. Windows numbers those keys too,
+        but in codes whose position differs between layouts, and no one has
+        measured which ones hold still.
+        """
+        if sys.platform != 'win32':
+            return {}
+
+        digits = ('ZERO', 'ONE', 'TWO', 'THREE', 'FOUR',
+                  'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE')
+
+        vk_map = {ord(letter): KeyCode[letter]
+                  for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}
+        vk_map.update({ord(str(value)): KeyCode[name]
+                       for value, name in enumerate(digits)})
+        return vk_map
 
     def on_input_event(self, event):
         """

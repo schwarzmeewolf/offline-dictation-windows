@@ -7,6 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Fixed
+- Dictation started from key combinations that were not the activation key.
+  The pynput backend answered `KeyCode.SPACE` for every key it could not
+  name, so an activation key containing the space bar fired from anything
+  sharing its modifiers - and Ctrl alone is enough to turn a letter into a
+  control character the character-keyed map does not list, which is why
+  Ctrl+Shift+B from an editor opened the microphone and typed the
+  transcription into whatever window was in front. Unnamed keys are now
+  reported as nothing and dropped, as the evdev backend has always done.
+  The default `pause` was never affected; combinations containing `space`
+  were affected on every machine.
+
+  Keys are now matched by virtual key code where the character does not
+  identify them. The map is keyed by character, which is a property of the
+  layout and the modifiers rather than of the key, so a letter combination
+  used to stop working the moment the layout was switched to Cyrillic. On
+  Windows the letter and digit keys are numbered after their ASCII
+  character whatever a layout prints on them, so the key itself is now
+  recognised without consulting the layout. Punctuation is left out: those
+  codes move between layouts and nobody has measured which hold still.
+
+  `tests/` is new, and holds the eight tests this needed - six of which
+  fail against the old code. The defect came in with upstream's
+  unreleased PR #60 (commit 139c913, August 2024) and survived two years
+  because nothing could catch it.
+
 - The application could not start on anything but Windows. `mic_gate` imported
   `winreg` at module level and `main.py` imports the gate unconditionally, so
   the very first import ended the process; `win_input` loaded user32 through
