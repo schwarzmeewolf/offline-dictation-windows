@@ -1,17 +1,18 @@
 <#
 .SYNOPSIS
-    Открыть, закрыть и проверить доступ приложений к микрофону.
+    Open, close and inspect application access to the microphone.
 
 .DESCRIPTION
-    Работает через CapabilityAccessManager в HKCU - тот же переключатель, что
-    сидит в Параметрах -> Конфиденциальность -> Микрофон. Прав администратора
-    не требует. Это настоящая граница для обычных приложений: брокер
-    возможностей отказывает им в захвате. Но код, запущенный от вашего имени,
-    вернёт разрешение так же легко, как этот скрипт, - гарантию даёт только
-    аппаратная кнопка на корпусе микрофона.
+    Works through CapabilityAccessManager under HKCU - the same switch that
+    sits in Settings -> Privacy -> Microphone. No administrator rights needed.
+    This is a real boundary for ordinary applications: the capability broker
+    refuses them the capture. But code running as you can grant the permission
+    back as easily as this script does - only the hardware button on the
+    microphone itself is a guarantee.
 
-    Флаг mute на устройстве снимается и ставится через mic_gate.py, если рядом
-    найден venv проекта. Это удобство, а не защита: mute снимает любой процесс.
+    The device mute flag is set and cleared through mic_gate.py, if the
+    project's venv is found alongside. That is a convenience, not a defence:
+    any process can unmute.
 
 .EXAMPLE
     .\mic-guard.ps1 -Status
@@ -38,7 +39,7 @@ function Set-Consent([string]$Value) {
 }
 
 function Set-EndpointMute([bool]$Flag) {
-    # Лучшее усилие: без venv проекта просто пропускаем, consent важнее.
+    # Best effort: without the project venv we simply skip it, consent matters more.
     $py = Join-Path $Root 'venv\Scripts\python.exe'
     if (-not (Test-Path $py)) { return }
     $arg = if ($Flag) { 'True' } else { 'False' }
@@ -86,35 +87,35 @@ switch ($PSCmdlet.ParameterSetName) {
     'Open' {
         Set-Consent 'Allow'; Set-EndpointMute $false
         $s = Get-MicState
-        Write-Output "МИКРОФОН ОТКРЫТ   consent=$($s.Consent)  muted=$($s.Muted)"
+        Write-Output "MICROPHONE OPEN   consent=$($s.Consent)  muted=$($s.Muted)"
     }
     'Close' {
         Set-Consent 'Deny'; Set-EndpointMute $true
         $s = Get-MicState
-        Write-Output "МИКРОФОН ЗАКРЫТ   consent=$($s.Consent)  muted=$($s.Muted)"
+        Write-Output "MICROPHONE CLOSED   consent=$($s.Consent)  muted=$($s.Muted)"
     }
     'Audit' {
         $s = Get-MicState
-        Write-Output "Состояние: consent=$($s.Consent)  muted=$($s.Muted)"
+        Write-Output "State: consent=$($s.Consent)  muted=$($s.Muted)"
         Write-Output ''
         $users = Get-MicUsers
         $now = $users | Where-Object Active
         if ($now) {
-            Write-Output 'СЕЙЧАС ДЕРЖАТ МИКРОФОН:'
+            Write-Output 'HOLDING THE MICROPHONE RIGHT NOW:'
             $now | ForEach-Object { Write-Output "   $($_.App)" }
         } else {
-            Write-Output 'Сейчас микрофон никто не держит.'
+            Write-Output 'Nothing is holding the microphone right now.'
         }
         Write-Output ''
-        Write-Output 'Последние обращения:'
+        Write-Output 'Recent use:'
         $users | Where-Object { -not $_.Active } | Select-Object -First 20 |
             ForEach-Object { Write-Output ("   {0:yyyy-MM-dd HH:mm}  {1}" -f $_.Last, $_.App) }
     }
     default {
         $s = Get-MicState
-        $verdict = if ($s.Consent -eq 'Deny') { 'ЗАКРЫТ' } else { 'ОТКРЫТ' }
-        Write-Output "Микрофон: $verdict   consent=$($s.Consent)  muted=$($s.Muted)"
+        $verdict = if ($s.Consent -eq 'Deny') { 'CLOSED' } else { 'OPEN' }
+        Write-Output "Microphone: $verdict   consent=$($s.Consent)  muted=$($s.Muted)"
         $now = Get-MicUsers | Where-Object Active
-        if ($now) { $now | ForEach-Object { Write-Output "   держит: $($_.App)" } }
+        if ($now) { $now | ForEach-Object { Write-Output "   held by: $($_.App)" } }
     }
 }
