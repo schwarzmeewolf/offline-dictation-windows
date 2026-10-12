@@ -117,9 +117,21 @@ Two supporting pieces live in `tools/`:
   Use `-Open` when you need the microphone for a call.
 - `mic-guard-task.xml` — a Task Scheduler job that closes the microphone after
   five minutes of idle, as a backstop for when WhisperWriter exits without
-  restoring the state. Register with
-  `schtasks /create /tn "WhisperWriter Mic Guard" /xml tools\mic-guard-task.xml /f`.
-  Change the idle threshold in the XML's `<Duration>` field.
+  restoring the state. It is a template: `__PROJECT_DIR__` stands for the folder
+  you cloned into, and the task carries no account, so registering it fills in
+  whoever ran the command. From the project root:
+
+  ```powershell
+  $xml = (Get-Content tools\mic-guard-task.xml -Raw) -replace '__PROJECT_DIR__', $PWD.Path
+  Register-ScheduledTask -TaskName 'WhisperWriter Mic Guard' -Xml $xml -Force
+  ```
+
+  No administrator rights needed. Change the idle threshold in the XML's
+  `<Duration>` field. Remove it again with
+  `Unregister-ScheduledTask -TaskName 'WhisperWriter Mic Guard'`, or keep it and
+  switch it off with `Disable-ScheduledTask` — worth knowing, because an idle
+  trigger that closes the microphone to every desktop application will also
+  stop voice messages working in a chat application until the gate is reopened.
 
 ### Transcription runs on the GPU
 

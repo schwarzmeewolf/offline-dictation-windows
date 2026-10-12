@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- `tools/mic-guard-task.xml` is a template rather than one machine's
+  registered task. It carried the author's computer and account name in
+  `<UserId>`, an absolute path no one else has, and a description mangled
+  into mojibake by an encoding mismatch - so it could not have been
+  registered as shipped anyway. The account is gone, which makes Windows
+  fill in whoever registers it; the path is now `__PROJECT_DIR__`, which
+  README's command substitutes; the description is readable. README also
+  says how to remove or disable the task, and warns that an idle trigger
+  closing the microphone to every desktop application stops voice messages
+  working in a chat application.
+
+  Verified by registering the template under a temporary name: Windows
+  filled in the current account and the substituted path arrived intact.
+
 ### Fixed
 - Dictation started from key combinations that were not the activation key.
   The pynput backend answered `KeyCode.SPACE` for every key it could not
