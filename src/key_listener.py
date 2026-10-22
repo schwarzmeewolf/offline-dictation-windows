@@ -343,6 +343,7 @@ class KeyListener:
     def start(self):
         """Start the active backend."""
         if self.active_backend:
+            self.active_backend.watch_mouse = self.uses_mouse()
             self.active_backend.start()
         else:
             raise RuntimeError("No active backend selected")
@@ -383,6 +384,15 @@ class KeyListener:
     def set_activation_keys(self, keys: Set[KeyCode]):
         """Set the activation keys for the KeyChord."""
         self.key_chord = KeyChord(keys)
+
+    def uses_mouse(self) -> bool:
+        """Whether the activation combination includes a mouse button."""
+        if not self.key_chord:
+            return False
+        keys = set()
+        for key in self.key_chord.keys:
+            keys.update(key if isinstance(key, frozenset) else {key})
+        return any(key.name.startswith('MOUSE_') for key in keys)
 
     def on_input_event(self, event):
         """Handle input events and trigger callbacks if the key chord becomes active or inactive."""
@@ -758,6 +768,10 @@ class PynputBackend(InputBackend):
         """Initialize PynputBackend."""
         self.keyboard_listener = None
         self.mouse_listener = None
+        # Set by KeyListener before each start. A mouse hook sees every click on
+        # the machine; for an app that asks to be trusted with the keyboard and
+        # microphone, that is one hook too many unless a button is the shortcut.
+        self.watch_mouse = True
         self.keyboard = None
         self.mouse = None
         self.key_map = None
@@ -781,11 +795,12 @@ class PynputBackend(InputBackend):
             on_press=self._on_keyboard_press,
             on_release=self._on_keyboard_release
         )
-        self.mouse_listener = self.mouse.Listener(
-            on_click=self._on_mouse_click
-        )
         self.keyboard_listener.start()
-        self.mouse_listener.start()
+        if self.watch_mouse:
+            self.mouse_listener = self.mouse.Listener(
+                on_click=self._on_mouse_click
+            )
+            self.mouse_listener.start()
 
     def stop(self):
         """Stop listening for keyboard and mouse events."""
@@ -949,7 +964,6 @@ class PynputBackend(InputBackend):
             self.keyboard.Key.right: KeyCode.RIGHT,
 
             # Numpad keys
-            self.keyboard.Key.num_lock: KeyCode.NUM_LOCK,
             self.keyboard.KeyCode.from_vk(96): KeyCode.NUMPAD_0,
             self.keyboard.KeyCode.from_vk(97): KeyCode.NUMPAD_1,
             self.keyboard.KeyCode.from_vk(98): KeyCode.NUMPAD_2,
