@@ -24,8 +24,15 @@ class StatusWindow(BaseWindow):
         """
         Initialize the status user interface.
         """
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        
+        # The window must never take the focus. It appears over the window being
+        # dictated into, and text is typed wherever the focus is when
+        # transcription ends; an activated status window gave the focus back on
+        # closing to whichever window was on top, not to the one it took it from.
+        # Clicking the close button still works - a click needs no focus.
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+                            | Qt.WindowDoesNotAcceptFocus)
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+
         status_layout = QHBoxLayout()
         status_layout.setContentsMargins(0, 0, 0, 0)
 

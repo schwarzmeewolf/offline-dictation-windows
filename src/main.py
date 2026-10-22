@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QMenu,
 import i18n
 import log_files
 import mic_gate
+import win_focus
 from i18n import tr
 from key_listener import KeyListener
 from result_thread import ResultThread
@@ -89,6 +90,7 @@ class WhisperWriterApp(QObject):
         """
         super().__init__()
         self.error_box_open = False
+        self.dictation_target = None
         self.app = QApplication(sys.argv)
         # This app lives in the tray with every window hidden, so Qt's default
         # "quit when the last visible window closes" would end it the moment an
@@ -289,6 +291,10 @@ class WhisperWriterApp(QObject):
         if self.result_thread and self.result_thread.isRunning():
             return
 
+        # The window being dictated into: whatever is in front when the key is
+        # pressed, before the status window or anything else can appear.
+        self.dictation_target = win_focus.foreground()
+
         self.result_thread = ResultThread(self.local_model)
         if not ConfigManager.get_config_value('misc', 'hide_status_window'):
             self.result_thread.statusSignal.connect(self.status_window.updateStatus)
@@ -324,6 +330,13 @@ class WhisperWriterApp(QObject):
         """
         When the transcription is complete, type the result and start listening for the activation key again.
         """
+        # Something may have come to the front while the audio was being
+        # transcribed. If the dictation window cannot be brought back, the text
+        # still goes out - to wherever the focus is, as it always did - but the
+        # log says so, because that is the one case a user will report.
+        if result and self.dictation_target and not win_focus.restore(self.dictation_target):
+            print('Could not return the focus to the dictation window; '
+                  'typing into the window in front.')
         self.input_simulator.typewrite(result)
 
         if ConfigManager.get_config_value('misc', 'noise_on_completion'):
