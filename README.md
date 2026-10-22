@@ -694,5 +694,9 @@ applicable law" — and nothing has to be accepted to run the program.
 
 The changes in this fork were developed with Claude; the commit trailers record it.
 
+The **Sponsor** button at the top of the page goes to the maintainer of this
+fork, for the work described above. The original application is savbell's; its
+author asks for nothing, and this fork would not exist without it.
+
 Licensed under the **GNU General Public License v3**, inherited from upstream. See
 [LICENSE](LICENSE). This is a modified version of the original project.
