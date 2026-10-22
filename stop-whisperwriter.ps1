@@ -6,14 +6,26 @@
 
 # Matched on this script's own folder rather than a hardcoded project name,
 # so a clone in any directory is found and another checkout is left alone.
-$root = $PSScriptRoot.TrimEnd('')
+# The folder is compared as a whole path, never as a substring of the command
+# line: with the project in a drive root that substring is just "C:\", which
+# every Python on the drive contains.
+$root = $PSScriptRoot.TrimEnd('\') + '\'
+$venv = $root + 'venv\'
+$script = $root + 'src\main.py'
 
-$procs = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -like 'python*' -and
-    $_.CommandLine -and
-    $_.CommandLine.Contains($root) -and
-    $_.CommandLine -like '*main.py*'
-}
+$all = Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'python*' }
+
+# Ours: the interpreter is this project's venv and runs main.py, or any
+# interpreter was given this project's main.py by full path.
+$procs = @($all | Where-Object {
+    $_.CommandLine -and $_.CommandLine -like '*main.py*' -and (
+        ($_.ExecutablePath -and $_.ExecutablePath.StartsWith($venv, [StringComparison]::OrdinalIgnoreCase)) -or
+        $_.CommandLine.IndexOf($script, [StringComparison]::OrdinalIgnoreCase) -ge 0)
+})
+# The venv's pythonw.exe is only a launcher: it starts the base interpreter as
+# a child, whose command line carries the relative src\main.py and no folder.
+$ids = $procs | ForEach-Object { $_.ProcessId }
+$procs += @($all | Where-Object { $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId })
 
 if (-not $procs) {
     Write-Output 'WhisperWriter is not running.'
