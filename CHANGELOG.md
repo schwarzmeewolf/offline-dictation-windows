@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+- README no longer promises more than the app keeps. Its opening said "no
+  internet", while the first run downloads the speech model, and "no audio
+  leaves the machine", while an optional mode sends it to OpenAI. The
+  microphone-gate section said the microphone "is closed by default", while
+  the gate ships `off` - as the Configuration section correctly said. All
+  three now say what happens. A Disclaimer section names the three things a
+  user can actually be hurt by - text typed into whatever window has focus,
+  a gate that changes a setting for every application, and the fork's
+  independence from upstream and OpenAI - and points at LICENSE sections 15
+  and 16 for the binding text. The install command carries the real clone URL
+  instead of a placeholder.
 - `tools/mic-guard-task.xml` is a template rather than one machine's
   registered task. It carried the author's computer and account name in
   `<UserId>`, an absolute path no one else has, and a description mangled

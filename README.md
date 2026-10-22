@@ -1,8 +1,10 @@
 # WhisperWriter — Windows hardening fork
 
 Local, offline speech-to-text for Windows. Press a key, talk, stop talking — the
-recognised text is typed into whatever window has focus. No internet, no account,
-no audio leaves the machine.
+recognised text is typed into whatever window has focus. No account. The first
+run downloads the speech model; after that no internet is needed and no audio
+leaves the machine. An optional cloud mode sends audio to OpenAI instead — it is
+off unless you turn it on.
 
 This is a fork of **[savbell/whisper-writer](https://github.com/savbell/whisper-writer)**.
 The upstream project provides the application; this fork makes it survive daily use
@@ -76,10 +78,12 @@ what it started, so the count stays at two no matter how long the app runs.
 
 ### The microphone stays shut outside dictation
 
-Windows leaves a capture device open to every process all day. This fork inverts
-that: the microphone is closed by default and a dictation opens it for the few
-seconds it records. Controlled by `security.mic_gate` in `src/config.yaml`
-(`off`, `mute`, `consent`, `both`).
+Windows leaves a capture device open to every process all day. This fork can
+invert that: with the gate on, the microphone stays closed and a dictation opens
+it for the few seconds it records. Controlled by `security.mic_gate` in
+`src/config.yaml` (`off`, `mute`, `consent`, `both`). It ships `off` — closing
+the microphone affects every application, so turning it on is your call; see
+[Configuration](#configuration).
 
 Two levers, and they are not equally strong:
 
@@ -401,7 +405,7 @@ the GPU entirely is fine; the app falls back to the CPU on its own.
 ## Installation
 
 ```bash
-git clone <your-clone-url> whisper-writer
+git clone https://github.com/schwarzmeewolf/offline-dictation-windows.git whisper-writer
 cd whisper-writer
 py -3.11 -m venv venv
 venv\Scripts\python.exe -m pip install PyQt5 faster-whisper sounddevice soundfile ^
@@ -546,6 +550,22 @@ rewrite. `CHANGELOG.md` keeps upstream's entries below the fork's own.
 The running version is in `src/version.py`, printed at the top of every run in
 `ww_out.log`, and shown when hovering the tray icon — so a bug report can name
 one.
+
+## Disclaimer
+
+This software is provided as is, without warranty of any kind, and the authors
+accept no liability for what follows from using it — sections 15 and 16 of the
+[LICENSE](LICENSE) are the binding text. In practice, know three things:
+
+- **Text goes wherever the focus is.** The transcription is typed into the
+  window in front when it finishes. If that is a chat, a terminal or a form,
+  what you said is sent there.
+- **The microphone gate changes a Windows setting for every application**, not
+  just this one, and it is not a defence against malware — see
+  [The microphone stays shut outside dictation](#the-microphone-stays-shut-outside-dictation)
+  for what it does and does not stop.
+- **This is an independent fork.** It is not affiliated with or endorsed by the
+  original author or by OpenAI.
 
 ## Credits and licence
 
