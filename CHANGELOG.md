@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- `start-dictation.bat` run before `install.bat` put up Windows' own
+  "cannot find ...venv\Scripts\pythonw.exe" dialog, which told the person
+  nothing about what to do. Seen in the wild on the first day the
+  repository was public. Both launchers now check for the venv first and
+  say, in English and Russian, to run `install.bat`.
+- `debug-dictation.bat` ran the interpreter from `C:\dev\whisper-writer`
+  by absolute path, so it could not have worked anywhere else. It derives
+  the path from its own location now, like the other launchers.
+
 ## [2.2.0] - 2026-10-22
 
 ### Security

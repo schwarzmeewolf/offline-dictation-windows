@@ -11,8 +11,15 @@ set HF_HUB_DISABLE_SYMLINKS_WARNING=1
 set PYTHONIOENCODING=utf-8
 set PYTHONUNBUFFERED=1
 
+rem Pure ASCII here, see start-dictation.bat: the bilingual text is in the .ps1.
+if not exist "%~dp0venv\Scripts\python.exe" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\not-installed.ps1"
+    pause
+    exit /b 1
+)
+
 echo Starting WhisperWriter (debug). Logs: ww_out.log / ww_err.log
-"C:\dev\whisper-writer\venv\Scripts\python.exe" "src\main.py" 1> ww_out.log 2> ww_err.log
+"%~dp0venv\Scripts\python.exe" "src\main.py" 1> ww_out.log 2> ww_err.log
 set CODE=%ERRORLEVEL%
 
 echo.

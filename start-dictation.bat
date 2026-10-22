@@ -14,4 +14,14 @@ if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\tools\find-running.ps1" -Root "%ROOT%"
 if errorlevel 1 exit /b 0
 
+rem Without the venv, Windows would put up "cannot find ...pythonw.exe" and
+rem leave the person guessing. Say what is actually missing, in both languages.
+rem The message lives in a .ps1: cmd loses its place in a .bat that holds
+rem non-ASCII text, so this file must stay pure ASCII.
+if not exist "%~dp0venv\Scripts\pythonw.exe" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\not-installed.ps1"
+    pause
+    exit /b 1
+)
+
 start "" "%~dp0venv\Scripts\pythonw.exe" "src\main.py"
