@@ -79,7 +79,10 @@ class ConfigManager:
             base_dir = os.path.dirname(os.path.abspath(__file__))
             schema_path = os.path.join(base_dir, 'config_schema.yaml')
 
-        with open(schema_path, 'r') as file:
+        # Always UTF-8. Left to the default, open() decodes with the system code
+        # page - cp1251 on a Russian Windows - and a non-ASCII value in the file
+        # turns into different characters without any error to show for it.
+        with open(schema_path, 'r', encoding='utf-8') as file:
             schema = yaml.safe_load(file)
         return schema
 
@@ -109,7 +112,7 @@ class ConfigManager:
 
         if config_path and os.path.isfile(config_path):
             try:
-                with open(config_path, 'r') as file:
+                with open(config_path, 'r', encoding='utf-8') as file:
                     user_config = yaml.safe_load(file)
                     deep_update(self.config, user_config)
             except yaml.YAMLError:
@@ -130,7 +133,7 @@ class ConfigManager:
 
         cls._backup_config(config_path)
 
-        with open(config_path, 'w') as file:
+        with open(config_path, 'w', encoding='utf-8') as file:
             yaml.dump(cls._instance.config, file, default_flow_style=False)
 
     # How many dated backups to keep. Each one is under two kilobytes, and a
