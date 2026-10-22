@@ -45,6 +45,9 @@ typed. It read as a crash.
   `misc.write_status_log`; the words have their own switch,
   `misc.log_transcribed_text`, off by default. A config from an older version is
   read with the old name mapped to the new one, and does not switch the text on.
+  An install from before this change still has the words it logged, in
+  `ww_out.log` and `ww_out.log.1`; nothing deletes them for you. Delete the
+  two files if you want them gone — the app starts fresh ones.
 - Native crashes are caught by `faulthandler`, which writes to `ww_fault.log`.
   It reports every Windows exception, including the harmless RPC/COM ones
   (`code 0x8001xxxx`) that the audio stack raises and handles itself whenever a
