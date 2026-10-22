@@ -6,7 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- A ready-to-run Windows build. The release page carries
+  `WhisperWriter-<version>-windows-x64.zip`: unpack it anywhere, double-click
+  `WhisperWriter.exe`, and nothing has to be installed - not Python, not the
+  components. CPU only; the speech model is still downloaded at the first
+  start. Made by `tools/build-exe.ps1` from `tools/WhisperWriter.spec`, in
+  the open like the installer.
+
 ### Fixed
+- The voice-activity filter could refuse to load, or take the process down
+  with an access violation, depending on which Visual C++ runtime got loaded
+  first. The PyQt5 wheel carries its own, old copy; onnxruntime wants the
+  system's newer one and is imported by faster-whisper only at the first
+  transcription, long after Qt. It is now imported at startup, right after
+  ctranslate2, which has the same constraint for the same reason.
 - `start-dictation.bat` run before `install.bat` put up Windows' own
   "cannot find ...venv\Scripts\pythonw.exe" dialog, which told the person
   nothing about what to do. Seen in the wild on the first day the

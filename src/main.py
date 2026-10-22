@@ -8,6 +8,17 @@
 import cuda_libs
 cuda_libs.enable()
 import ctranslate2  # noqa: F401  (first of the native imports)
+# onnxruntime (faster-whisper's VAD) has the same constraint, and for a known
+# reason: the PyQt5 wheel carries its own copy of the Visual C++ runtime
+# (msvcp140.dll 14.26), which Qt's folder puts in front of the system copy;
+# onnxruntime needs the system one (14.4x or newer) and either refuses to
+# load or dies with an access violation when Qt got there first. faster-whisper
+# imports it lazily, at the first transcription - long after Qt - so it is
+# imported here, while the runtime is still the system's.
+try:
+    import onnxruntime  # noqa: F401
+except ImportError:
+    pass
 import os
 import sys
 import time
@@ -399,6 +410,13 @@ class WhisperWriterApp(QObject):
 
 
 if __name__ == '__main__':
+    # Frozen by PyInstaller, the exe is started from wherever the shortcut
+    # points, while assets, src\config.yaml and .env are looked up relative
+    # to the working directory. Make that the exe's own folder, and give the
+    # settings window a src\ to write the config into.
+    if getattr(sys, 'frozen', False):
+        os.chdir(os.path.dirname(sys.executable))
+        os.makedirs('src', exist_ok=True)
     attach_log_files()
     print(f'--- WhisperWriter {__version__} started '
           f'{time.strftime("%Y-%m-%d %H:%M:%S")} ---')

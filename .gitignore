@@ -150,3 +150,8 @@ ww_err.log
 ww_fault.log
 *.log.1
 support-info.txt
+
+# exe build (tools/build-exe.ps1)
+build-venv/
+# the build recipe is ours, unlike the *.spec PyInstaller scatters
+!tools/WhisperWriter.spec

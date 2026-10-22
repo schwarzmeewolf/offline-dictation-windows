@@ -461,6 +461,25 @@ the GPU entirely is fine; the app falls back to the CPU on its own.
 
 ## Installation
 
+### Without installing anything
+
+The [release page](https://github.com/schwarzmeewolf/offline-dictation-windows/releases/latest)
+carries `WhisperWriter-<version>-windows-x64.zip`, a ready-to-run build.
+No Python, no components, nothing goes into the system.
+
+1. Download the archive and unpack it into a folder of your own, such as
+   `C:\WhisperWriter`. Keep the folder together: `WhisperWriter.exe` needs
+   the `_internal` folder beside it.
+2. Double-click `WhisperWriter.exe`. Windows may put up *Windows protected
+   your PC* - the program is not signed with a paid certificate, that is
+   all it means. Click **More info**, then **Run anyway**.
+3. First start, as below: the settings window opens, **Save** accepts the
+   defaults, the speech model is downloaded once (about 460 MB), and the
+   tray icon appears when it is listening.
+
+This build runs on the CPU only. For the GPU, or to change the code, install
+from source as described next; the two can live side by side.
+
 ### Without a command line
 
 For anyone who has never opened one. Allow ten minutes and about 1 GB of
