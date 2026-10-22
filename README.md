@@ -623,7 +623,10 @@ file selected, and says to send that file to whoever is helping. The file holds
 the version, Windows and Python, the package versions, the settings with every
 key-like value redacted, the default microphone, and the last 200 lines of the
 status log with any dictated text removed — so it is safe to send to a
-stranger. Nothing in it needs a programmer to produce.
+stranger. Nothing in it needs a programmer to produce. Then open an issue at
+<https://github.com/schwarzmeewolf/offline-dictation-windows/issues>, say what
+you did and what happened, and attach the file. That is the one place
+questions are read.
 
 Start with the logs — `ww_out.log` and `ww_err.log` in the project root. Each run
 begins with a `--- WhisperWriter started <timestamp> ---` line.
