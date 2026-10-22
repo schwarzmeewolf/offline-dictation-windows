@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-22
+
 ### Security
 - What is dictated no longer goes into the log. Every transcription was
   written to `ww_out.log` in full - one install's log held 85 dictated
