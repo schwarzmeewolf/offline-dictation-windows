@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QMenu,
 import i18n
 import log_files
 import mic_gate
+import support_info
 import win_focus
 from i18n import tr
 from key_listener import KeyListener
@@ -195,6 +196,12 @@ class WhisperWriterApp(QObject):
         settings_action.triggered.connect(self.settings_window.show)
         tray_menu.addAction(settings_action)
 
+        # For the person who installed it and cannot be asked to find the
+        # logs: one click, one file, and a sentence saying whom to send it to.
+        support_action = QAction(tr('Support info'), self.app)
+        support_action.triggered.connect(self.write_support_info)
+        tray_menu.addAction(support_action)
+
         exit_action = QAction(tr('Exit'), self.app)
         exit_action.triggered.connect(self.exit_app)
         tray_menu.addAction(exit_action)
@@ -251,6 +258,22 @@ class WhisperWriterApp(QObject):
         labels = dict(DICTATION_LANGUAGES)
         name = tr(labels[code]) if code in labels else code
         self.tray_icon.setToolTip(f'WhisperWriter {__version__} - {name}')
+
+    def write_support_info(self):
+        """Write the support file, show it in its folder, and say what to do with it."""
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        try:
+            path = support_info.write(root, ConfigManager._instance.config, __version__)
+        except OSError as e:
+            show_message(QMessageBox.Warning,
+                         tr('Could not write the support file: {error}').format(error=e))
+            return
+        support_info.reveal(path)
+        show_message(QMessageBox.Information, tr(
+            'The support file is written:\n\n{path}\n\n'
+            'Send it to whoever is helping you. It holds the version, the '
+            'settings without any key, the microphone and the last lines of '
+            'the status log - never what you dictated.').format(path=path))
 
     def cleanup(self):
         mic_gate.close()

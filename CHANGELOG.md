@@ -39,6 +39,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Cyrillic in its name: installed in 66 s, started from the shortcut,
   refused a second copy, stopped by `stop-dictation.bat`, and left no window
   behind.
+- **Support info** in the tray menu. One click writes `support-info.txt` into
+  the program folder, opens the folder with the file selected, and says to
+  send it to whoever is helping. It holds the version and commit, Windows
+  and Python, package versions, the settings, the default microphone, and
+  the last lines of the status and error logs. Every setting whose name
+  says key, token, secret or password is redacted wherever it sits, and
+  every `Post-processed line:` is dropped from the log tail, so neither the
+  OpenAI key nor anything dictated can reach the file — six tests say so.
+  The `.env` file is never read. `src/support_info.py` imports neither Qt
+  nor the model.
 - `DISCLAIMER.md`, in English and Russian: what you take on by using the
   program — text goes to the focused window, recognition makes mistakes, the
   microphone gate affects every application, what reaches the internet and

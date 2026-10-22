@@ -28,6 +28,17 @@ _RUSSIAN = {
     'Transcribing...': 'Распознавание...',
     'WhisperWriter Main Menu': 'Главное меню WhisperWriter',
     'Open Settings': 'Открыть настройки',
+    'Support info': 'Сведения для поддержки',
+    'Could not write the support file: {error}':
+        'Не удалось записать файл сведений: {error}',
+    'The support file is written:\n\n{path}\n\n'
+    'Send it to whoever is helping you. It holds the version, the '
+    'settings without any key, the microphone and the last lines of '
+    'the status log - never what you dictated.':
+        'Файл сведений записан:\n\n{path}\n\n'
+        'Отправьте его тому, кто вам помогает. В нём версия, настройки без '
+        'ключей, микрофон и последние строки журнала работы - '
+        'продиктованного текста там нет.',
     'Exit': 'Выход',
     'Dictation language': 'Язык диктовки',
     'Auto-detect': 'Определять по речи',

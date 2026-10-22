@@ -614,6 +614,14 @@ keys without consuming them, so whatever you pick still reaches the focused wind
 
 ## Troubleshooting
 
+**Asking for help.** Right-click the tray icon and choose **Support info**. It
+writes `support-info.txt` into the program folder, opens the folder with the
+file selected, and says to send that file to whoever is helping. The file holds
+the version, Windows and Python, the package versions, the settings with every
+key-like value redacted, the default microphone, and the last 200 lines of the
+status log with any dictated text removed — so it is safe to send to a
+stranger. Nothing in it needs a programmer to produce.
+
 Start with the logs — `ww_out.log` and `ww_err.log` in the project root. Each run
 begins with a `--- WhisperWriter started <timestamp> ---` line.
 

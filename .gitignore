@@ -149,3 +149,4 @@ ww_out.log
 ww_err.log
 ww_fault.log
 *.log.1
+support-info.txt
