@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Security
+- What is dictated no longer goes into the log. Every transcription was
+  written to `ww_out.log` in full - one install's log held 85 dictated
+  phrases word for word - under `misc.print_to_terminal`, a name promising a
+  terminal that `pythonw` does not have. The status log stays and now records
+  each result's length instead of its text. The words have their own switch,
+  `misc.log_transcribed_text`, off by default.
+
+  `print_to_terminal` is renamed `write_status_log`. A config from an older
+  version is read with the old name mapped to the new one, and the text switch
+  stays off - upgrading stops the text being written rather than carrying the
+  old `true` across. Both settings say plainly in the settings window, in
+  English and Russian, what lands on disk.
+
+  A failed `ydotool` call printed its whole command line, which ends in the
+  dictated text; it now names the program and the exit code.
+
+  Seven tests. Accepted on a clean install: five real dictations through the
+  model left no dictated word in either log; with the switch on, all five
+  appeared.
+
 ## [2.1.0] - 2026-10-22
 
 ### Changed

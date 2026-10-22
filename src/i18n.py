@@ -78,7 +78,8 @@ _RUSSIAN = {
     'Add trailing space': 'Добавлять пробел в конце',
     'Remove capitalization': 'Приводить к нижнему регистру',
     'Input method': 'Способ ввода текста',
-    'Print to terminal': 'Писать в терминал',
+    'Write status log': 'Вести журнал работы',
+    'Log transcribed text': 'Записывать текст диктовок в журнал',
     'Hide status window': 'Скрывать окно статуса',
     'Noise on completion': 'Звук по завершении',
     'Ui language': 'Язык интерфейса',
@@ -139,8 +140,15 @@ _RUSSIAN = {
         'Приводить распознанный текст к нижнему регистру.',
     'The method to use for simulating keyboard input.':
         'Способ имитации ввода с клавиатуры.',
-    'Set to true to print the script status and transcribed text to the terminal.':
-        'Выводить состояние программы и распознанный текст в терминал.',
+    "Write what the app is doing - start-up, model, recordings, timings, errors - to ww_out.log in the program folder. Never includes what was dictated; that is log_transcribed_text. Worth keeping on: it is what to send when something goes wrong.":
+        'Записывать в ww_out.log в папке программы, что она делает: запуск, модель, '
+        'записи, время, ошибки. Продиктованного текста там нет никогда - для него '
+        'отдельная настройка ниже. Лучше не выключать: этот файл и присылают, '
+        'когда что-то сломалось.',
+    "Also write every transcription, word for word, to ww_out.log. Off by default: whatever you dictate - a password, a letter, a diagnosis - would then sit on disk in plain text until the log rolls over.":
+        'Записывать в ww_out.log ещё и каждый распознанный текст, слово в слово. '
+        'По умолчанию выключено: всё продиктованное - пароль, письмо, диагноз - '
+        'лежало бы на диске открытым текстом, пока журнал не перезапишется.',
     'Set to true to hide the status window during operation.':
         'Скрывать окно статуса во время работы.',
     'Set to true to play a noise after the transcription has been typed out.':

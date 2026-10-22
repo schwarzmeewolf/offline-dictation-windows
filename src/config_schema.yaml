@@ -162,10 +162,14 @@ misc:
     options:
       - en
       - ru
-  print_to_terminal:
+  write_status_log:
     value: true
     type: bool
-    description: "Set to true to print the script status and transcribed text to the terminal."
+    description: "Write what the app is doing - start-up, model, recordings, timings, errors - to ww_out.log in the program folder. Never includes what was dictated; that is log_transcribed_text. Worth keeping on: it is what to send when something goes wrong."
+  log_transcribed_text:
+    value: false
+    type: bool
+    description: "Also write every transcription, word for word, to ww_out.log. Off by default: whatever you dictate - a password, a letter, a diagnosis - would then sit on disk in plain text until the log rolls over."
   hide_status_window:
     value: false
     type: bool

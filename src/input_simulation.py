@@ -17,7 +17,9 @@ def run_command_or_exit_on_failure(command):
     try:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error running command: {e}")
+        # Name the program and the exit code only. The full command line is
+        # what `e` would print, and for ydotool it ends in the dictated text.
+        print(f"Error running {command[0]}: exit code {e.returncode}")
         exit(1)
 
 class InputSimulator:

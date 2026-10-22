@@ -34,6 +34,14 @@ typed. It read as a crash.
   console is attached. Paths are derived from the source file rather than the
   working directory, so they land correctly regardless of how the app was started.
   Each log starts over past 512 KB, keeping the previous one as `*.log.1`.
+- **What you dictate is not logged.** `ww_out.log` records start-up, the model,
+  each recording's length and how long transcription took, the number of
+  characters that came back, and errors — never the words. Every transcription
+  used to be written there in full, under a setting called `print_to_terminal`
+  that pointed at a terminal `pythonw` does not have. The status log is now
+  `misc.write_status_log`; the words have their own switch,
+  `misc.log_transcribed_text`, off by default. A config from an older version is
+  read with the old name mapped to the new one, and does not switch the text on.
 - Native crashes are caught by `faulthandler`, which writes to `ww_fault.log`.
   It reports every Windows exception, including the harmless RPC/COM ones
   (`code 0x8001xxxx`) that the audio stack raises and handles itself whenever a
@@ -554,7 +562,7 @@ begins with a `--- WhisperWriter started <timestamp> ---` line.
 | Log says `Falling back to CPU` | The GPU could not complete a test encode. Transcription still works, just slower. |
 | App vanishes mid-transcription | Start it again, then look in `ww_err.log` for `faulthandler report from the previous run`; the stack names the thread and the call. Before the restart the report is still in `ww_fault.log`, among harmless `code 0x8001xxxx` entries. |
 | Text lands in another window | `ww_out.log` says `Could not return the focus to the dictation window` when Windows refused to bring it back. Leaving that window in front until the text arrives avoids it. |
-| Text typed as gibberish | On a build predating `win_input.py`, this is the keyboard-layout mismatch described above rather than a transcription error. The `Post-processed line:` entry in `ww_out.log` shows what the model actually produced - compare the two. |
+| Text typed as gibberish | On a build predating `win_input.py`, this is the keyboard-layout mismatch described above rather than a transcription error. To see what the model actually produced, turn on `misc.log_transcribed_text` for a dictation or two: `ww_out.log` then shows each result as a `Post-processed line:` - compare the two, and turn it off again. |
 | Log says `Unicode input refused` | The focused window runs at a higher integrity level than this app - an elevated editor, say. No simulated input reaches it; run the app elevated too, or dictate elsewhere. |
 
 To watch it run with a console attached:

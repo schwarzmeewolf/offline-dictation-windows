@@ -102,7 +102,13 @@ class ResultThread(QThread):
             end_time = time.time()
 
             transcription_time = end_time - start_time
-            ConfigManager.console_print(f'Transcription completed in {transcription_time:.2f} seconds. Post-processed line: {result}')
+            # The length says whether anything came back without saying what.
+            # The words themselves only on request: this log is a file on disk.
+            ConfigManager.console_print(
+                f'Transcription completed in {transcription_time:.2f} seconds, '
+                f'{len(result.strip())} characters.')
+            if ConfigManager.get_config_value('misc', 'log_transcribed_text'):
+                ConfigManager.console_print(f'Post-processed line: {result}')
 
             if not self.is_running:
                 return

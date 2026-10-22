@@ -114,9 +114,27 @@ class ConfigManager:
             try:
                 with open(config_path, 'r', encoding='utf-8') as file:
                     user_config = yaml.safe_load(file)
+                    self._migrate(user_config)
                     deep_update(self.config, user_config)
             except yaml.YAMLError:
                 print("Error in configuration file. Using default configuration.")
+
+    @staticmethod
+    def _migrate(user_config):
+        """
+        Carry settings written by older versions over to their current names.
+
+        `misc.print_to_terminal` became `misc.write_status_log`. The old name
+        promised a terminal that does not exist under pythonw - the output went
+        to ww_out.log - and the same switch wrote every transcription there in
+        full. Its value now governs only the status log. The dictated text has
+        its own switch, which is off unless set, so upgrading stops writing it
+        rather than carrying a silent `true` across.
+        """
+        misc = (user_config or {}).get('misc')
+        if isinstance(misc, dict) and 'print_to_terminal' in misc:
+            old = misc.pop('print_to_terminal')
+            misc.setdefault('write_status_log', old)
 
     @classmethod
     def save_config(cls, config_path=os.path.join('src', 'config.yaml')):
@@ -184,5 +202,5 @@ class ConfigManager:
     @classmethod
     def console_print(cls, message):
         """Print a message to the console if enabled in the configuration."""
-        if cls._instance and cls._instance.config['misc']['print_to_terminal']:
+        if cls._instance and cls._instance.config['misc']['write_status_log']:
             print(message)
