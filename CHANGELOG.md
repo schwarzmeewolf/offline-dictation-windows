@@ -6,7 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-22
+
 ### Changed
+- The logs are capped. `ww_out.log` and `ww_err.log` were opened for appending
+  and never trimmed, so they grew for as long as the app stayed installed. Each
+  now starts over past 512 KB, on write rather than only at start-up because
+  the app runs for days, and keeps the previous file as `*.log.1`.
+- `faulthandler` writes to `ww_fault.log` instead of `ww_err.log`. It dumps every
+  thread for each Windows exception, including the harmless RPC/COM codes
+  (`0x80010012`, `0x8001010d`, `0x80010108`) the audio stack raises and handles
+  itself when `sd.InputStream` opens - 21 dumps in two weeks on one machine and 25
+  on another, against one real fault - so README's advice to look for
+  `Windows fatal exception` in `ww_err.log` led to a file where a real crash
+  could no longer be found. At the next start the real reports are moved into
+  `ww_err.log` under a marked heading and the noise is dropped.
+- The mouse is hooked only when the activation combination includes a mouse
+  button. A global mouse hook saw every click on the machine for the whole life
+  of the process, whatever the shortcut was.
+- README says how to run the tests: the standard library's `unittest`, so
+  nothing has to be installed for them.
+- The log and fault-report code moved from `main.py` to `log_files.py`, which
+  imports only the standard library and can be tested on its own.
 - README no longer promises more than the app keeps. Its opening said "no
   internet", while the first run downloads the speech model, and "no audio
   leaves the machine", while an optional mode sends it to OpenAI. The
@@ -33,6 +54,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   filled in the current account and the substituted path arrived intact.
 
 ### Fixed
+- Dictated text could land in a different window. The status window took the
+  focus when it appeared, and on closing Windows handed the focus to the top
+  window in the stack rather than back to the one it was taken from; text is
+  typed wherever the focus is. Dictating into VS Code put the text into another
+  application's window that was on top. The status window is now shown without
+  activating and does not accept the focus, and `win_focus.py` remembers the
+  window in front when the activation key is pressed and hands the focus back
+  to it before typing if anything else came forward. When Windows refuses that,
+  `ww_out.log` says so.
+- `config.yaml` and the schema were read in the system code page - cp1251 on a
+  Russian Windows - so a hand-written Russian `initial_prompt` reached the model
+  as different characters, with no error to show for it. Reading and writing
+  are UTF-8 now, and README's warning about it is gone. Two new tests.
+- `stop-whisperwriter.ps1` meant to strip a trailing backslash with
+  `TrimEnd('')` and stripped nothing. Harmless as long as the project is not in
+  a drive root - but there the folder is `C:\`, and both it and
+  `tools/find-running.ps1` matched processes by that substring of the command
+  line, which would have stopped every Python on the drive. Both now compare
+  whole paths: the interpreter in this project's `venv`, or this project's
+  `src\main.py`. The stop script also stops the base interpreter the venv's
+  `pythonw.exe` launches, whose command line names no folder at all.
+  `find-running.ps1` had the same root trouble in another form: it trimmed the
+  backslash before resolving the path, and `C:` is the current folder on drive
+  C rather than its root.
+- `num_lock` was listed twice in the pynput key map.
 - Dictation started from key combinations that were not the activation key.
   The pynput backend answered `KeyCode.SPACE` for every key it could not
   name, so an activation key containing the space bar fired from anything

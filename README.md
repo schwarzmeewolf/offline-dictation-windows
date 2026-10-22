@@ -30,10 +30,16 @@ to `None` and **drops every `print()` and every traceback on the floor**. A reco
 that failed left no trace anywhere: the status window blinked once and nothing was
 typed. It read as a crash.
 
-- `attach_log_files()` in `src/main.py` points both streams at `ww_out.log` /
-  `ww_err.log` when no console is attached. Paths are derived from the source file
-  rather than the working directory, so they land correctly regardless of how the
-  app was started.
+- `src/log_files.py` points both streams at `ww_out.log` / `ww_err.log` when no
+  console is attached. Paths are derived from the source file rather than the
+  working directory, so they land correctly regardless of how the app was started.
+  Each log starts over past 512 KB, keeping the previous one as `*.log.1`.
+- Native crashes are caught by `faulthandler`, which writes to `ww_fault.log`.
+  It reports every Windows exception, including the harmless RPC/COM ones
+  (`code 0x8001xxxx`) that the audio stack raises and handles itself whenever a
+  sound stream opens - two dozen in two weeks, each a full dump of every thread.
+  At the next start the real reports are moved into `ww_err.log` under
+  `--- faulthandler report from the previous run ---`, and the noise is dropped.
 - `ResultThread` gained an `errorSignal`; the app turns it into a dialog that names
   the cause — microphone unavailable, no speech heard, nothing recognised — instead
   of failing quietly.
@@ -279,6 +285,23 @@ refuses the injection outright — a window running elevated, where no simulated
 input of any kind gets through. That refusal is now reported instead of
 appearing as text that silently never arrives.
 
+### Text goes to the window you dictated into
+
+Dictating into VS Code, the text arrived in a different application whose window
+happened to be on top. The status window took the focus when it appeared, and
+when it closed Windows handed the focus to the top window in the stack — not back
+to the one it was taken from. Text is typed wherever the focus is at that moment.
+
+- The status window is shown without activating and does not accept the focus
+  (`WA_ShowWithoutActivating`, `WindowDoesNotAcceptFocus`). Its close button still
+  works: a click needs no focus.
+- `win_focus.py` notes the window in front when the activation key is pressed, and
+  hands the focus back to it before typing if anything else came forward during
+  transcription. Windows does not always allow that; when it refuses, the text goes
+  where it always went and `ww_out.log` says
+  `Could not return the focus to the dictation window`. A minimised or closed
+  target is left alone.
+
 ### Windows integration
 
 - `start-dictation.bat` — launcher; refuses to start a second instance.
@@ -498,11 +521,10 @@ Two traps worth knowing:
   prints `Unknown key:` and drops it from the combination, leaving a shortcut that
   quietly does the wrong thing. Since this fork writes logs, that line is now
   visible in `ww_out.log`.
-- **`open()` is called without `encoding=`** when reading the schema and reading or
-  writing the config. On a non-UTF-8 Windows locale this decodes as the system code
-  page. Comments survive because YAML discards them after decoding, but **non-ASCII
-  values would break loading.** Add `encoding='utf-8'` in `utils.py` first if you
-  need one.
+- **Save `config.yaml` as UTF-8** when editing it by hand. It is read as UTF-8
+  whatever the system locale, so a Russian `initial_prompt` or a Cyrillic
+  `model_path` reaches the app as written. Before 2.1.0 it was read in the system
+  code page, cp1251 on a Russian Windows, and such values arrived garbled.
 
 ### Choosing an activation key
 
@@ -530,7 +552,8 @@ begins with a `--- WhisperWriter started <timestamp> ---` line.
 | App dies instantly on start | Check that `import ctranslate2` is still the first import in `src/main.py`. |
 | `Library cublas64_12.dll is not found` | The CUDA wheels are missing, or `cuda_libs.enable()` did not run before the model was built. |
 | Log says `Falling back to CPU` | The GPU could not complete a test encode. Transcription still works, just slower. |
-| App vanishes mid-transcription | Look for a `Windows fatal exception` block in `ww_err.log`; the faulthandler stack names the thread and the call. |
+| App vanishes mid-transcription | Start it again, then look in `ww_err.log` for `faulthandler report from the previous run`; the stack names the thread and the call. Before the restart the report is still in `ww_fault.log`, among harmless `code 0x8001xxxx` entries. |
+| Text lands in another window | `ww_out.log` says `Could not return the focus to the dictation window` when Windows refused to bring it back. Leaving that window in front until the text arrives avoids it. |
 | Text typed as gibberish | On a build predating `win_input.py`, this is the keyboard-layout mismatch described above rather than a transcription error. The `Post-processed line:` entry in `ww_out.log` shows what the model actually produced - compare the two. |
 | Log says `Unicode input refused` | The focused window runs at a higher integrity level than this app - an elevated editor, say. No simulated input reaches it; run the app elevated too, or dictate elsewhere. |
 
@@ -539,6 +562,17 @@ To watch it run with a console attached:
 ```bash
 venv\Scripts\python.exe src\main.py
 ```
+
+## Tests
+
+The tests use the standard library's `unittest`, so nothing extra needs installing.
+From the project root:
+
+```bash
+venv\Scripts\python.exe -m unittest discover -s tests
+```
+
+`pytest` runs them too, if you have it.
 
 ## Versioning
 
