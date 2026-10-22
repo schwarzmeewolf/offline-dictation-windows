@@ -27,6 +27,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   model left no dictated word in either log; with the switch on, all five
   appeared.
 
+### Added
+- `install.bat`, for a person who has never opened a command line. It checks
+  for Python 3.11 and says where to get it if missing, refuses a folder path
+  too long for Windows and says where to move the folder, builds the venv,
+  installs the requirements, offers GPU support when an NVIDIA card is
+  present, puts a shortcut in the Start menu and optionally in Startup. Every
+  message in English and Russian. The work is in `tools/install.ps1`; the
+  shortcut starts the app through `tools/launch-hidden.vbs`, so no console
+  window flashes up. Accepted from a clean copy in a folder with spaces and
+  Cyrillic in its name: installed in 66 s, started from the shortcut,
+  refused a second copy, stopped by `stop-dictation.bat`, and left no window
+  behind.
+- `DISCLAIMER.md`, in English and Russian: what you take on by using the
+  program — text goes to the focused window, recognition makes mistakes, the
+  microphone gate affects every application, what reaches the internet and
+  what stays on disk. It is an explanation, not an agreement: GPL section 7
+  allows added disclaimers only on code this fork wrote, sections 15–16
+  already limit liability to what the law permits, and section 9 says nothing
+  has to be accepted to run the program. README links to it at the top and
+  from Installation.
+- README: an "Accuracy and punctuation" section, saying that punctuation and
+  capitals come from the model and what to expect from `small` on a CPU
+  (counted over 85 dictations), and a "Without a command line" installation
+  path.
+
+### Fixed
+- The app would not start from a folder whose path holds a character outside
+  the local 8-bit code page — a Cyrillic account name was enough. Qt 5 works
+  its plugin directory out for itself through that encoding, every such
+  character came out as `?`, and Qt stopped the process with "no Qt platform
+  plugin could be initialized" before the app's first line ran. The plugin
+  path is now built in Python and handed to Qt as a string, which arrives
+  intact. Found by the installer's acceptance run in `Папка с пробелом`;
+  CTranslate2 loads a model from such a folder without complaint, so the
+  model cache was never affected.
+
 ## [2.1.0] - 2026-10-22
 
 ### Changed

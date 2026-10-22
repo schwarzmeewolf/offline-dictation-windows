@@ -6,6 +6,9 @@ run downloads the speech model; after that no internet is needed and no audio
 leaves the machine. An optional cloud mode sends audio to OpenAI instead — it is
 off unless you turn it on.
 
+Free, as is, at your own risk: read [DISCLAIMER.md](DISCLAIMER.md) (English and
+Russian) before relying on it.
+
 This is a fork of **[savbell/whisper-writer](https://github.com/savbell/whisper-writer)**.
 The upstream project provides the application; this fork makes it survive daily use
 on Windows. Every change here came out of an actual failure, and the sections below
@@ -205,6 +208,26 @@ The small model's mistakes were not near misses — it produced *сентябр�
 and *шипелявлю*, none of which are words. `medium` is best avoided for a separate
 reason: on one sample it invented a YouTube sign-off that was never spoken, a
 known artefact of its training data.
+
+### Accuracy and punctuation
+
+Punctuation and capital letters come from the model itself. There is no
+separate step that adds them, nothing to configure, and no way to make a small
+model punctuate like a large one. What you get depends on the model, so the
+tables above are the guide: `large-v3` on a GPU made no word errors on real
+speech; `small` on a CPU — the shipped default, and all a machine without an
+NVIDIA card can run at a bearable speed — made one in nine.
+
+Punctuation follows the same curve. Counted over 85 dictations with `small` on
+a CPU (`int8`) on a second machine: about two thirds of the phrases ended in a
+full stop, 11 had no punctuation at all, a third of the long ones (12 words
+and more) had no commas, and a few started in lower case. `large-v3` on the GPU
+in this repository's measurements showed none of that. So if the text arrives
+with its commas missing, the program is working as well as that model can;
+the fix is a bigger model, and a bigger model wants a GPU — on a modest GTX
+1050 Ti, `large-v3` ran faster than `small` did on the CPU. On a CPU alone
+`large-v3` was not measured here; expect it several times slower than `small`,
+and a 3 GB download.
 
 ### English and Russian interface
 
@@ -435,6 +458,46 @@ the GPU entirely is fine; the app falls back to the CPU on its own.
 
 ## Installation
 
+### Without a command line
+
+For anyone who has never opened one. Allow ten minutes and about 1 GB of
+downloads — the components during the install, the speech model at the first
+start.
+
+1. **Install Python 3.11.** Download the *Windows installer (64-bit)* from
+   <https://www.python.org/downloads/release/python-3119/> and run it. Leave
+   the options as they are — in particular **py launcher** must stay ticked,
+   it is how the installer finds Python. Newer Pythons will not do: the
+   components are built for 3.11, and that is the only version tested.
+2. **Get the program.** On this page click the green **Code** button, then
+   **Download ZIP**. Unpack the archive into a folder with a short path, such
+   as `C:\WhisperWriter`. Not the Desktop, not Downloads: Windows limits paths
+   to 260 characters, the components reach 105 deep on their own, and a long
+   folder name ends the install half-way with an error that says nothing
+   about folders. The installer refuses to start above 140 characters and
+   says so.
+3. **Double-click `install.bat`.** It checks for Python, installs the
+   components (about 500 MB, a few minutes), and puts **WhisperWriter** in the
+   Start menu. If an NVIDIA card is found, it asks whether to add GPU support
+   (2 GB more, faster and more accurate dictation). It asks whether to start
+   with Windows, then whether to start now. Every message is shown in English
+   and Russian. If something fails it says what, in both languages, and
+   stops; running `install.bat` again continues where it left off.
+4. **First start.** The settings window opens; press **Save** to accept the
+   defaults. The program then downloads the speech model (about 460 MB, once),
+   and when the tray icon appears it is listening. Press **Pause**, speak,
+   stop speaking — the text appears where the cursor is.
+
+What `install.bat` does is nothing you could not type yourself; the script is
+`tools/install.ps1`, in the open. The shortcut it creates starts the program
+through `tools/launch-hidden.vbs`, so no console window flashes up.
+
+Read [DISCLAIMER.md](DISCLAIMER.md) before relying on it for anything that
+matters: text goes to whatever window has focus, and recognition makes
+mistakes.
+
+### From a command line
+
 ```bash
 git clone https://github.com/schwarzmeewolf/offline-dictation-windows.git whisper-writer
 cd whisper-writer
@@ -473,7 +536,10 @@ fail — it silently ignores your config and opens the first-run settings window
 launcher `.bat` files handle this with `cd /d`.
 
 The bundled `.bat` files derive every path from their own location, so the project
-can live anywhere and a desktop shortcut still works.
+can live anywhere and a desktop shortcut still works — anywhere including a
+folder with spaces or Cyrillic in its name. The Start-menu shortcut that
+`install.bat` creates goes through `tools/launch-hidden.vbs`, which runs the
+launcher with no console window.
 
 On first run there is no `src/config.yaml` yet, so the settings window opens;
 Save writes it and restarts into it. After that the app loads the model, starts
@@ -595,19 +661,16 @@ one.
 
 ## Disclaimer
 
-This software is provided as is, without warranty of any kind, and the authors
-accept no liability for what follows from using it — sections 15 and 16 of the
-[LICENSE](LICENSE) are the binding text. In practice, know three things:
+The program is free and comes as is, without warranty; the binding text is
+sections 15 to 17 of the [LICENSE](LICENSE). [DISCLAIMER.md](DISCLAIMER.md)
+explains in plain English and Russian what that means here: text goes to
+whatever window has focus, recognition makes mistakes, the microphone gate
+affects every program, what reaches the internet and what stays on disk.
 
-- **Text goes wherever the focus is.** The transcription is typed into the
-  window in front when it finishes. If that is a chat, a terminal or a form,
-  what you said is sent there.
-- **The microphone gate changes a Windows setting for every application**, not
-  just this one, and it is not a defence against malware — see
-  [The microphone stays shut outside dictation](#the-microphone-stays-shut-outside-dictation)
-  for what it does and does not stop.
-- **This is an independent fork.** It is not affiliated with or endorsed by the
-  original author or by OpenAI.
+It is an explanation, not an agreement. It adds no terms to the GPL — section 7
+would allow extra disclaimers only for code this fork added, not for upstream's,
+and sections 15 and 16 already limit liability "to the extent permitted by
+applicable law" — and nothing has to be accepted to run the program.
 
 ## Credits and licence
 

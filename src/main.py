@@ -13,7 +13,8 @@ import sys
 import time
 from audioplayer import AudioPlayer
 from pynput.keyboard import Controller
-from PyQt5.QtCore import QObject, QProcess
+import PyQt5
+from PyQt5.QtCore import QCoreApplication, QObject, QProcess
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QMenu,
                              QMessageBox, QSystemTrayIcon)
@@ -71,6 +72,25 @@ MESSAGE_BOX_STYLE = """
 DICTATION_LANGUAGES = ((None, 'Auto-detect'), ('en', 'English'), ('ru', 'Russian'))
 
 
+def point_qt_at_its_plugins():
+    """
+    Tell Qt where its plugins are, in a path it cannot garble.
+
+    Qt 5 works its plugin directory out for itself, and on the way it pushes
+    the path through the local 8-bit encoding. Any character that encoding
+    cannot hold comes out as '?': installed under C:\\Users\\Юрий, Qt went
+    looking in C:/Users/????/..., found no platform plugin, and stopped the
+    app with "no Qt platform plugin could be initialized" before a single
+    line of it ran. A Cyrillic account name or folder is enough.
+
+    The same path built by Python and handed over as a string arrives
+    intact. Has to happen before the QApplication exists.
+    """
+    plugins = os.path.join(os.path.dirname(PyQt5.__file__), 'Qt5', 'plugins')
+    if os.path.isdir(plugins):
+        QCoreApplication.setLibraryPaths([plugins])
+
+
 def show_message(icon, text):
     """
     Put up a message box in the application's colours.
@@ -91,6 +111,7 @@ class WhisperWriterApp(QObject):
         super().__init__()
         self.error_box_open = False
         self.dictation_target = None
+        point_qt_at_its_plugins()
         self.app = QApplication(sys.argv)
         # This app lives in the tray with every window hidden, so Qt's default
         # "quit when the last visible window closes" would end it the moment an
