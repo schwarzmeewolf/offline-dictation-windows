@@ -8,7 +8,6 @@
 import cuda_libs
 cuda_libs.enable()
 import ctranslate2  # noqa: F401  (first of the native imports)
-import faulthandler
 import os
 import sys
 import time
@@ -20,6 +19,7 @@ from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QMenu,
                              QMessageBox, QSystemTrayIcon)
 
 import i18n
+import log_files
 import mic_gate
 from i18n import tr
 from key_listener import KeyListener
@@ -35,37 +35,12 @@ from version import __version__
 
 def attach_log_files():
     """
-    Give print() and tracebacks somewhere to go.
+    Point the logs at the project root, whatever the working directory.
 
-    Under pythonw.exe there is no console: sys.stdout and sys.stderr are None,
-    and Python drops every message and every traceback silently. Point them at
-    log files in the project root instead, so a failure leaves a trace.
-    Paths are derived from this file, not the working directory, so the logs
-    land in the right place even if the app is started from elsewhere.
+    The path is derived from this file, so the logs land in the right place
+    even if the app is started from elsewhere. See log_files for the rest.
     """
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    try:
-        if sys.stdout is None:
-            sys.stdout = open(os.path.join(root, 'ww_out.log'), 'a',
-                              encoding='utf-8', buffering=1)
-        if sys.stderr is None:
-            sys.stderr = open(os.path.join(root, 'ww_err.log'), 'a',
-                              encoding='utf-8', buffering=1)
-    except OSError:
-        # An unwritable folder must not keep the app from starting; without the
-        # log files print() simply stays the no-op it was before.
-        pass
-
-    # A native crash - an access violation inside a C extension - kills the
-    # process without raising anything Python can catch, so the error log stays
-    # empty and the app simply vanishes. faulthandler dumps the stack of every
-    # thread as the process dies, which is the only way to learn where it was.
-    if sys.stderr is not None:
-        try:
-            faulthandler.enable(file=sys.stderr)
-        except (OSError, ValueError, RuntimeError):
-            pass
-
+    log_files.attach(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Matches the yellow BaseWindow paints, so a dialog and the status window read
 # as parts of the same application. QMessageBox is a native Qt dialog rather

@@ -147,3 +147,5 @@ config.yaml.backup-*
 .claude-checkpoints/
 ww_out.log
 ww_err.log
+ww_fault.log
+*.log.1
