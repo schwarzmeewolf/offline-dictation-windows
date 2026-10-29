@@ -1,0 +1,25 @@
+# Direct dependencies, pinned to the versions this fork is known to run on.
+# Transitive dependencies are left to pip - upstream's file pinned the whole
+# closure, including packages this app never imports.
+#
+# Python 3.11. Installing `av` from source needs an FFmpeg toolchain, so let
+# pip take the prebuilt wheel rather than forcing an older pin.
+
+PyQt5==5.15.11
+faster-whisper==1.2.1
+ctranslate2==4.8.0          # pinned: 4.5+ needs cuDNN 9, which the GPU extras provide
+numpy<2                     # faster-whisper's stack is not numpy 2 clean
+sounddevice==0.5.5
+soundfile==0.14.0
+pynput==1.8.2
+webrtcvad-wheels==2.0.14
+PyYAML==6.0.3
+audioplayer==0.6
+python-dotenv==1.2.2
+pycaw==20251023             # the microphone gate's mute lever
+openai==2.42.0              # only used when model_options.use_api is true
+# The Visual C++ runtime, copied into the venv's own folders. A clean Windows
+# (the Sandbox image, a fresh install) has no msvcp140.dll at all, and the one
+# copy the PyQt5 wheel brings is too old for onnxruntime; ctranslate2 needs it
+# too. Without this, the app does not start there and no message says why.
+msvc-runtime; sys_platform == "win32"

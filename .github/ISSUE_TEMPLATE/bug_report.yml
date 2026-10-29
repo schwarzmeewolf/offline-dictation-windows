@@ -1,0 +1,44 @@
+name: Something does not work / Что-то не работает
+description: Tell what happened and attach the support file. / Расскажите, что случилось, и приложите файл сведений.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before you start:** right-click the WhisperWriter tray icon → **Support info**. It writes `support-info.txt` and opens its folder. The file holds no keys and nothing you dictated.
+
+        **Сначала:** щёлкните правой кнопкой по значку WhisperWriter в трее → **Сведения для поддержки**. Программа запишет файл `support-info.txt` и откроет папку с ним. В файле нет ключей и нет продиктованного текста.
+  - type: textarea
+    id: did
+    attributes:
+      label: What did you do? / Что вы делали?
+      placeholder: "Pressed Pause in Notepad and said a sentence. / Нажал Pause в Блокноте и сказал фразу."
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened? / Что произошло?
+      placeholder: "Nothing was typed. / Ничего не напечаталось."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / Чего вы ждали?
+      placeholder: "The sentence in Notepad. / Фразу в Блокноте."
+    validations:
+      required: true
+  - type: textarea
+    id: support
+    attributes:
+      label: support-info.txt
+      description: Drag the file into this box. / Перетащите файл в это поле.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / Версия
+      description: Hover over the tray icon, or the first line of the support file. / Наведите мышь на значок в трее, или первая строка файла сведений.
+      placeholder: 2.3.0-alpha.1

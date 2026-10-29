@@ -1,0 +1,12 @@
+# Optional: the CUDA 12 runtime for GPU transcription.
+#
+#     pip install -r requirements-gpu.txt
+#
+# These are the libraries CTranslate2 asks Windows for at the first encode.
+# src/cuda_libs.py finds them wherever pip put them and makes them loadable;
+# nothing else is needed, and no CUDA Toolkit install is required.
+#
+# Skipping this file is fine - the app falls back to the CPU on its own.
+
+nvidia-cublas-cu12
+nvidia-cudnn-cu12

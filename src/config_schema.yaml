@@ -1,0 +1,198 @@
+# Every setting, its default and the help text the settings window shows
+# behind its "?" button. The help is written for someone who has never seen
+# the program: what the setting does, with an example, and what an empty
+# field or 'auto' means. Every description needs a Russian translation in
+# src/i18n.py - tests/test_i18n.py fails until it has one.
+
+# Configuration options for the Whisper models
+model_options:
+  use_api:
+    value: false
+    type: bool
+    description: "Off: speech is recognised on this computer and never leaves it. On: the recording is sent to OpenAI's servers, which needs an internet connection and a paid OpenAI key. Leave it off unless you know you want the cloud."
+
+  # Common configuration options for both API and local models
+  common:
+    language:
+      value: null
+      type: str
+      description: "The language you speak. Choose it here - Russian, English and so on. 'Auto-detect' lets the program guess from your speech, but it can guess wrong with an accent or with foreign words mixed in, so naming the language is more reliable. The tray menu switches it for the moment without opening the settings."
+    temperature:
+      value: 0.0
+      type: float
+      description: "How freely the model may guess. 0 means it always picks the most likely words, which is what dictation wants; leave it at 0 unless you have a reason. The model raises it by itself only when its first attempt is plainly garbage."
+    initial_prompt:
+      value: null
+      type: str
+      description: "Optional. A sentence written the way you want the result to look - for example names and terms you use often: 'Call with Anna about the VAT return in Excel.' It nudges the spelling of those words. Empty is fine."
+
+  # Configuration options for the OpenAI API
+  api:
+    model:
+      value: whisper-1
+      type: str
+      description: "Only for the cloud mode. The OpenAI model to send recordings to; 'whisper-1' is the one to use."
+    base_url:
+      value: https://api.openai.com/v1
+      type: str
+      description: "Only for the cloud mode. The address recordings are sent to. Leave it as it is, unless you run a compatible server of your own."
+    api_key:
+      value: null
+      type: str
+      description: "Only for the cloud mode. Your OpenAI key, starting with 'sk-'. It is kept in its own file beside the settings and never written to the logs or the support file."
+
+  # Configuration options for the faster-whisper model
+  local:
+    model:
+      value: small
+      type: str
+      description: "How big a speech model to use. Bigger is more accurate and slower. 'small' (460 MB) works on any computer. With an NVIDIA graphics card, 'large-v3' (3 GB) is both more accurate and faster. The model is downloaded once, the first time it is used. The '.en' ones understand English only."
+      options:
+        - base
+        - base.en
+        - tiny
+        - tiny.en
+        - small
+        - small.en
+        - medium
+        - medium.en
+        - large
+        - large-v1
+        - large-v2
+        - large-v3
+    device:
+      value: auto
+      type: str
+      description: "What does the recognising. 'cpu' - the processor, works everywhere. 'cuda' - an NVIDIA graphics card, much faster, needs the GPU support the installer offers. 'auto' uses the card if it can and the processor otherwise. If the card does not work, the program says so in its log and uses the processor."
+      options:
+        - auto
+        - cuda
+        - cpu
+    compute_type:
+      value: int8_float32
+      type: str
+      description: "How precisely the model calculates. 'int8' is the fastest on a processor. 'int8_float32' works on every processor and every card. 'float16' is fastest on a newer NVIDIA card, but GTX 10-series and older cannot run it. If a choice does not work, the program falls back to the processor at start-up."
+      options:
+        - default
+        - float32
+        - float16
+        - int8
+        - int8_float32
+        - int8_float16
+    condition_on_previous_text:
+      value: false
+      type: bool
+      description: "Show the model what it recognised just before, as a hint for the next piece. Off is better for dictation: each dictation is a separate short phrase, and with this on the model sometimes repeats itself."
+    vad_filter:
+      value: true
+      type: bool
+      description: "Cut the silence out of a recording before recognising it. Keeps the model from inventing words in the quiet parts. Leave it on."
+    model_path:
+      value: null
+      type: str
+      description: "Optional. A folder with a model you already have on disk. Empty means the model chosen above is downloaded by itself the first time."
+
+# Configuration options for activation and recording
+recording_options:
+  activation_key:
+    value: pause
+    type: str
+    description: "The key that starts a dictation. Click the field and press the key or combination you want, for example Pause, or Ctrl+Shift+Space on a laptop without a Pause key. Esc cancels. The program warns you if another program already uses the combination - then both would react to it. The key still reaches the window you are typing in, so pick one that does nothing there."
+  input_backend:
+    value: auto
+    type: str
+    description: "How the program watches the keyboard. Leave it on 'auto'. 'evdev' is for Linux only."
+    options:
+      - auto
+      - evdev
+      - pynput
+  recording_mode:
+    value: voice_activity_detection
+    type: str
+    description: "When a recording stops. 'voice_activity_detection': press the key, speak, stop speaking - the recording ends by itself after a pause. 'press_to_toggle': press to start, press again to stop. 'hold_to_record': speak while holding the key down. 'continuous': after each pause a new recording starts at once, until you press the key again."
+    options:
+      - continuous
+      - voice_activity_detection
+      - press_to_toggle
+      - hold_to_record
+  sound_device:
+    value: null
+    type: str
+    description: "Which microphone to record from, by its number. Empty means the one Windows uses by default - change that in the Windows sound settings, which is easier than finding a number here."
+  sample_rate:
+    value: 16000
+    type: int
+    description: "Recording quality in samples per second. The model works at 16000; leave it."
+  silence_duration:
+    value: 2000
+    type: int
+    description: "How long a pause, in milliseconds, ends a recording. 2000 is two seconds - room to think in the middle of a sentence. Shorter cuts you off and splits one thought into two dictations; longer makes you wait."
+  min_duration:
+    value: 100
+    type: int
+    description: "Recordings shorter than this, in milliseconds, are thrown away - an accidental tap of the key should not produce text. 100 is a tenth of a second."
+
+# Post-processing options for the transcribed text
+post_processing:
+  writing_key_press_delay:
+    value: 0.005
+    type: float
+    description: "A pause between typed characters, in seconds. If some program loses letters, raise it to 0.02. Otherwise leave it."
+  remove_trailing_period:
+    value: false
+    type: bool
+    description: "Drop the full stop the model puts at the end. Handy when dictating into a search box or a chat."
+  add_trailing_space:
+    value: true
+    type: bool
+    description: "Add a space after the text, so the next dictation does not stick to it."
+  remove_capitalization:
+    value: false
+    type: bool
+    description: "Write everything in small letters."
+  input_method:
+    value: pynput
+    type: str
+    description: "How the text is put into the window. On Windows it is 'pynput', which types the letters themselves, so the result is right whatever keyboard layout the window is in. 'ydotool' and 'dotool' are for Linux."
+    options:
+      - pynput
+      - ydotool
+      - dotool
+
+# Miscellaneous settings
+misc:
+  ui_language:
+    value: en
+    type: str
+    description: "The language of the program's own windows and menus: 'en' English, 'ru' Russian. It does not change the language you dictate in - that is 'Language' on the first tab. Takes effect after saving, when the program restarts."
+    options:
+      - en
+      - ru
+  write_status_log:
+    value: true
+    type: bool
+    description: "Keep a log of what the program does - start-up, model, recordings, errors - in ww_out.log in the program folder. Never what you dictated; that is the next setting. Keep it on: when something goes wrong, this log is what helps."
+  log_transcribed_text:
+    value: false
+    type: bool
+    description: "Also write every dictation, word for word, to ww_out.log. Off by default: whatever you dictate - a password, a letter, a diagnosis - would then sit on disk as plain text."
+  hide_status_window:
+    value: false
+    type: bool
+    description: "Do not show the small window with 'Recording...' and 'Transcribing...' while dictating."
+  noise_on_completion:
+    value: false
+    type: bool
+    description: "Play a short sound when the text has been typed."
+
+# Privacy: keep the microphone shut outside of an actual dictation
+security:
+  mic_gate:
+    value: "off"
+    type: str
+    description: "Keep the microphone shut except while you dictate. 'off' - the program does not touch it. 'mute' - mutes the microphone between dictations. 'consent' - Windows denies the microphone to every program between dictations, as if you switched it off in the privacy settings. 'both' does both. It affects all programs, video calls included, so turn it on knowingly."
+    options:
+      - "off"
+      - mute
+      - consent
+      - both

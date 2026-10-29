@@ -1,0 +1,35 @@
+# Every push to main and every pull request: install the components on a
+# clean Windows runner, run the tests, build the ready-to-run archive with the
+# same script a release is made with, and keep the archive for download on
+# the run's page. Nothing is published: releases are still made by hand.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Test and build
+        shell: pwsh
+        run: ./tools/build-exe.ps1
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: WhisperWriter-windows-x64
+          path: dist/WhisperWriter-*-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30

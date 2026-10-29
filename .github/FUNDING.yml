@@ -1,0 +1,7 @@
+# Puts a "Sponsor" button on the repository page, once the GitHub Sponsors
+# profile named here is approved. Until then GitHub shows nothing, and no
+# error: the button lights up on its own the day the listing goes live.
+#
+# This names the maintainer of the fork. The original application is
+# savbell/whisper-writer; its author asks for nothing, and README says so.
+github: schwarzmeewolf
