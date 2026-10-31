@@ -108,6 +108,15 @@ def hold_single_instance():
     return True
 
 
+def release_single_instance():
+    """Let a new copy start while this one is still on its way out."""
+    global _instance_mutex
+    if _instance_mutex:
+        import ctypes
+        ctypes.windll.kernel32.CloseHandle(_instance_mutex)
+        _instance_mutex = None
+
+
 def attach_log_files():
     """
     Point the logs at the project root, whatever the working directory.
@@ -142,7 +151,7 @@ MESSAGE_BOX_STYLE = """
 # set to Russian therefore yields Russian text - approximately, and with no
 # guarantees, but it works often enough to be worth reaching for on purpose.
 # None lets the model decide from the audio.
-DICTATION_LANGUAGES = ((None, 'Auto-detect'), ('en', 'English'), ('ru', 'Russian'))
+DICTATION_LANGUAGES = ((None, 'Auto-detect'), ('en', 'English'), ('ru', 'Русский'))
 
 
 def point_qt_at_its_plugins():
@@ -203,6 +212,10 @@ class WhisperWriterApp(QObject):
         super().__init__()
         self.error_box_open = False
         self.dictation_target = None
+        # Not there until initialize_components, which a first start skips
+        # until the settings are saved - and saving restarts through cleanup().
+        self.key_listener = None
+        self.input_simulator = None
         point_qt_at_its_plugins()
         self.app = QApplication(sys.argv)
         # This app lives in the tray with every window hidden, so Qt's default
@@ -433,7 +446,12 @@ class WhisperWriterApp(QObject):
         """Restart the application to apply the new settings."""
         self.cleanup()
         QApplication.quit()
-        QProcess.startDetached(sys.executable, sys.argv)
+        # The new copy would find this one's mutex and leave at once.
+        release_single_instance()
+        # Frozen, sys.argv[0] is the exe itself, which is sys.executable
+        # already; from source it is the script that python has to be given.
+        args = sys.argv[1:] if getattr(sys, 'frozen', False) else sys.argv
+        QProcess.startDetached(sys.executable, args)
 
     def on_settings_closed(self):
         """

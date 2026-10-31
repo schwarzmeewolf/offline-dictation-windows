@@ -61,6 +61,14 @@ class RussianTest(unittest.TestCase):
                    == key.replace('_', ' ').capitalize()]
         self.assertEqual(missing, [])
 
+    def test_language_names_stay_in_their_own_language(self):
+        # The list reads Deutsch, Français, Українська...; a translated entry
+        # stood out as the one 'Английский' among them.
+        from languages import DICTATION_LANGUAGES, UI_LANGUAGES
+        translated = [name for code, name in DICTATION_LANGUAGES + UI_LANGUAGES
+                      if code and i18n.tr(name) != name]
+        self.assertEqual(translated, [])
+
 
 if __name__ == '__main__':
     unittest.main()

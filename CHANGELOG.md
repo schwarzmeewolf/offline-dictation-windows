@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.3.0-alpha.2] - 2026-10-31
+
+### Fixed
+- **Save on the first start closed the program instead of restarting it.**
+  The restart stops the key listener, which a first start has not created
+  yet; the error inside a Qt slot made Qt end the process (0xc0000409 in
+  Qt5Core.dll), and no new copy was started. The restart now also lets go of
+  the one-copy lock before it starts the new copy, and the ready-to-run build
+  no longer passes its own path to itself as an argument.
+- **English was listed as "Английский"** among languages otherwise named in
+  their own words. Language names are no longer translated, in the settings
+  or in the tray.
+
+### Changed
+- The first-start hint says that on a laptop F1-F12 often work only with Fn,
+  and suggests Ctrl+Shift+Space or Ctrl+Alt+Z.
+
 ## [2.3.0-alpha.1] - 2026-10-29
 
 An alpha: the version says so, the README and the settings window say so,

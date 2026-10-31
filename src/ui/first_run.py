@@ -76,7 +76,8 @@ class FirstRunWindow(BaseWindow):
         layout.addWidget(title)
         hint = QLabel(tr(
             'Click the field and press the key. Pause is a good one if your keyboard '
-            'has it; on a laptop without Pause, try Ctrl+Shift+Space. You can change '
+            'has it. On a laptop, try Ctrl+Shift+Space or Ctrl+Alt+Z: F1-F12 there '
+            'often work only together with Fn. You can change '
             'it later in the settings.'))
         hint.setWordWrap(True)
         layout.addWidget(hint)

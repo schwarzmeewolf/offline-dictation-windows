@@ -41,9 +41,9 @@ _RUSSIAN = {
         'продиктованного текста там нет.',
     'Exit': 'Выход',
     'Dictation language': 'Язык диктовки',
+    # Languages themselves are named in their own words, never translated:
+    # see languages.py. Only this entry is not a language.
     'Auto-detect': 'Определять по речи',
-    'English': 'Английский',
-    'Russian': 'Русский',
 
     # --- settings window chrome ---
     'Reset to saved settings': 'Вернуть сохранённые значения',
@@ -95,10 +95,12 @@ _RUSSIAN = {
     # --- first start ---
     'Which key will start a dictation?': 'Какой клавишей начинать диктовку?',
     'Click the field and press the key. Pause is a good one if your keyboard '
-    'has it; on a laptop without Pause, try Ctrl+Shift+Space. You can change '
+    'has it. On a laptop, try Ctrl+Shift+Space or Ctrl+Alt+Z: F1-F12 there '
+    'often work only together with Fn. You can change '
     'it later in the settings.':
         'Щёлкните в поле и нажмите клавишу. Хорошо подходит Pause, если она '
-        'есть на клавиатуре; на ноутбуке без Pause попробуйте Ctrl+Shift+Space. '
+        'есть на клавиатуре. На ноутбуке попробуйте Ctrl+Shift+Space или '
+        'Ctrl+Alt+Z: клавиши F1-F12 там часто работают только вместе с Fn. '
         'Потом её можно поменять в настройках.',
     'Continue': 'Дальше',
 
