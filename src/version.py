@@ -11,7 +11,7 @@ signal to anyone upgrading.
 # An alpha: the settings and the behaviour may still change between releases,
 # and the version says so wherever it is shown - log, tray, settings window,
 # support file.
-__version__ = '2.3.0-alpha.2'
+__version__ = '2.3.0-alpha.3'
 
 # The upstream release this fork started from, so the lineage stays checkable
 # even after the histories have drifted apart.

@@ -444,14 +444,21 @@ class WhisperWriterApp(QObject):
 
     def restart_app(self):
         """Restart the application to apply the new settings."""
+        print('Restarting: stopping this copy...')
         self.cleanup()
-        QApplication.quit()
         # The new copy would find this one's mutex and leave at once.
         release_single_instance()
         # Frozen, sys.argv[0] is the exe itself, which is sys.executable
         # already; from source it is the script that python has to be given.
         args = sys.argv[1:] if getattr(sys, 'frozen', False) else sys.argv
-        QProcess.startDetached(sys.executable, args)
+        started = QProcess.startDetached(sys.executable, args)
+        print(f'Restarting: new copy {"started" if started else "NOT started"} '
+              f'from {sys.executable}')
+        if not started:
+            show_message(QMessageBox.Warning, tr(
+                'The settings are saved, but the program could not start again '
+                'by itself. Start it again the usual way.'))
+        QApplication.quit()
 
     def on_settings_closed(self):
         """
@@ -564,7 +571,15 @@ class WhisperWriterApp(QObject):
         """
         Start the application.
         """
-        sys.exit(self.app.exec_())
+        code = self.app.exec_()
+        print(f'--- WhisperWriter {__version__} stopped '
+              f'{time.strftime("%Y-%m-%d %H:%M:%S")} ---')
+        # Straight out, past Python's shutdown: it waits for every foreign
+        # thread and atexit handler - the audio library, the keyboard hook -
+        # and one that never returns kept a quit copy alive with no window.
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(code)
 
 
 if __name__ == '__main__':

@@ -103,6 +103,10 @@ _RUSSIAN = {
         'Ctrl+Alt+Z: клавиши F1-F12 там часто работают только вместе с Fn. '
         'Потом её можно поменять в настройках.',
     'Continue': 'Дальше',
+    'The settings are saved, but the program could not start again '
+    'by itself. Start it again the usual way.':
+        'Настройки сохранены, но программа не смогла сама запуститься заново. '
+        'Запустите её ещё раз как обычно.',
 
     # --- tab names, from the schema's top-level keys ---
     'Model options': 'Модель',

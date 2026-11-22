@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.3.0-alpha.3] - 2026-11-22
+
+### Fixed
+- **After Save on the first start the program could stay running with no
+  window and not restart.** Saving closed the settings window, and closing
+  asks "close without saving?" - a modal box that came up after the restart
+  had begun. The window is now hidden instead. The new copy is started first
+  and the old one quits after, and the old copy leaves without waiting on
+  Python's shutdown, which waits for every foreign thread. If the new copy
+  cannot be started, a message says to start the program again.
+
+### Added
+- The restart writes its steps to `ww_out.log`: "Restarting: stopping this
+  copy...", "Restarting: new copy started", and a "stopped" line as the old
+  copy ends.
+
 ## [2.3.0-alpha.2] - 2026-10-31
 
 ### Fixed

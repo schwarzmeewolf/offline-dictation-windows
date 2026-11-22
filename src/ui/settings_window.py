@@ -295,8 +295,11 @@ class SettingsWindow(BaseWindow):
         ConfigManager.save_config()
         QMessageBox.information(self, tr('Settings'),
                                 tr('Settings have been saved. The application will now restart.'))
+        # Hidden, not closed: close() runs closeEvent, which asks "close
+        # without saving?" - a modal box after the restart has begun, which
+        # could sit unseen and keep the old copy alive.
+        self.hide()
         self.settings_saved.emit()
-        self.close()
 
     def save_setting(self, widget, category, sub_category, key, meta):
         value = self.get_widget_value_typed(widget, meta.get('type'))
